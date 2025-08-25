@@ -1,6 +1,6 @@
 "use client";
-import React from "react";
-import shopData from "@/components/Shop/shopData";
+import React, { useEffect, useState } from "react";
+// import shopData from "@/components/Shop/shopData";
 import ProductItem from "@/components/Common/ProductItem";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,8 +9,16 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { useCallback, useRef } from "react";
 import "swiper/css/navigation";
 import "swiper/css";
+import { getShopData } from "@/lib/server/shopData";
 
 const RecentlyViewdItems = () => {
+  const [shopData, setShopData] = useState([]);
+  useEffect(() => {
+    getShopData().then((data) => {
+      setShopData(data);
+    })
+  }, [])
+
   const sliderRef = useRef(null);
 
   const handlePrev = useCallback(() => {

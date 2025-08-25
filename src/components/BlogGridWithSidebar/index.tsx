@@ -1,4 +1,5 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import BlogItem from "../Blog/BlogItem";
 import blogData from "../BlogGrid/blogData"; 
@@ -6,9 +7,17 @@ import SearchForm from "../Blog/SearchForm";
 import LatestPosts from "../Blog/LatestPosts";
 import LatestProducts from "../Blog/LatestProducts";
 import Categories from "../Blog/Categories";
-import shopData from "../Shop/shopData"; 
+// import shopData from "../Shop/shopData"; 
+import { getShopData } from "@/lib/server/shopData";
  
 const BlogGridWithSidebar = () => {
+  const [shopData, setShopData] = useState([]);
+  useEffect(() => {
+    getShopData().then((data) => {
+      setShopData(data);
+    })
+  }, [])
+
   const categories = [
     {
       name: "Desktop",

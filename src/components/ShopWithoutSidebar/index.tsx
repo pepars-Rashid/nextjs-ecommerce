@@ -1,14 +1,22 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
 import CustomSelect from "../ShopWithSidebar/CustomSelect";
 
-import shopData from "../Shop/shopData";
+// import shopData from "../Shop/shopData";
+import { getShopData } from "@/lib/server/shopData";
 
 const ShopWithoutSidebar = () => {
+  const [shopData, setShopData] = useState([]);
+  useEffect(() => {
+    getShopData().then((data) => {
+      setShopData(data);
+    })
+  }, [])
+
   const [productStyle, setProductStyle] = useState("grid");
 
   const options = [

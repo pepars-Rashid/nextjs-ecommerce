@@ -7,14 +7,16 @@ import GenderDropdown from "./GenderDropdown";
 import SizeDropdown from "./SizeDropdown";
 import ColorsDropdwon from "./ColorsDropdwon";
 import PriceDropdown from "./PriceDropdown";
-import shopData from "../Shop/shopData";
+// import shopData from "../Shop/shopData";
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
+import { getShopData } from "@/lib/server/shopData";
 
 const ShopWithSidebar = () => {
   const [productStyle, setProductStyle] = useState("grid");
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
+  const [shopData, setShopData] = useState([]);
 
   const handleStickyMenu = () => {
     if (window.scrollY >= 80) {
@@ -77,8 +79,11 @@ const ShopWithSidebar = () => {
       products: 8,
     },
   ];
-
+  
   useEffect(() => {
+    getShopData().then((data) => {
+      setShopData(data);
+    })
     window.addEventListener("scroll", handleStickyMenu);
 
     // closing sidebar while clicking outside
@@ -95,7 +100,7 @@ const ShopWithSidebar = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  });
+  }, []); // Added missing dependency array
 
   return (
     <>

@@ -1,10 +1,19 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ProductItem from "@/components/Common/ProductItem";
-import shopData from "@/components/Shop/shopData";
+// import shopData from "@/components/Shop/shopData";
+import { getShopData } from "@/lib/server/shopData";
 
 const NewArrival = () => {
+  const [shopData, setShopData] = useState([]);
+  useEffect(() => {
+    getShopData().then((data) => {
+      setShopData(data);
+    })
+  }, [])
+
   return (
     <section className="overflow-hidden pt-15">
       <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
