@@ -11,12 +11,14 @@ import PriceDropdown from "./PriceDropdown";
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
 import { getShopData } from "@/lib/server/shopData";
+import { getCategoriesWithCounts } from "@/lib/server/categoriesWithCounts";
 
 const ShopWithSidebar = () => {
   const [productStyle, setProductStyle] = useState("grid");
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
   const [shopData, setShopData] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const handleStickyMenu = () => {
     if (window.scrollY >= 80) {
@@ -30,39 +32,6 @@ const ShopWithSidebar = () => {
     { label: "Latest Products", value: "0" },
     { label: "Best Selling", value: "1" },
     { label: "Old Products", value: "2" },
-  ];
-
-  const categories = [
-    {
-      name: "Desktop",
-      products: 10,
-      isRefined: true,
-    },
-    {
-      name: "Laptop",
-      products: 12,
-      isRefined: false,
-    },
-    {
-      name: "Monitor",
-      products: 30,
-      isRefined: false,
-    },
-    {
-      name: "UPS",
-      products: 23,
-      isRefined: false,
-    },
-    {
-      name: "Phone",
-      products: 10,
-      isRefined: false,
-    },
-    {
-      name: "Watch",
-      products: 13,
-      isRefined: false,
-    },
   ];
 
   const genders = [
@@ -79,11 +48,19 @@ const ShopWithSidebar = () => {
       products: 8,
     },
   ];
-  
+
   useEffect(() => {
     getShopData().then((data) => {
+      console.log('shop data: ', data)
       setShopData(data);
     })
+  }, []);
+
+  useEffect(() => {
+    getCategoriesWithCounts().then((cats) => setCategories(cats));
+  }, []);
+
+  useEffect(() => {
     window.addEventListener("scroll", handleStickyMenu);
 
     // closing sidebar while clicking outside

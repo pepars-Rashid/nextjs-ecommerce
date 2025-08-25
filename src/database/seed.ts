@@ -339,7 +339,113 @@ async function seed() {
 	console.log('Seed data inserted successfully!');
 }
 
-seed().catch((err) => {
+async function addDemoProductsToExistingCategories() {
+	const DEMO_CATEGORY_DESKTOP_ID = 21;
+	const DEMO_CATEGORY_LAPTOP_PC_ID = 15;
+	const DEMO_CATEGORY_WATCH_ID = 26;
+
+	const demoProducts = [
+		{
+			title: 'Demo Desktop 1',
+			price: '199.00',
+			discountedPrice: '149.00',
+			stock: 25,
+			reviewsCount: 0,
+			avgRating: '0.00',
+			description: 'Demo Desktop product for seeding into existing Desktop category.'
+		},
+		{
+			title: 'Demo Desktop 2',
+			price: '299.00',
+			discountedPrice: '199.00',
+			stock: 20,
+			reviewsCount: 0,
+			avgRating: '0.00',
+			description: 'Another demo Desktop product.'
+		},
+		{
+			title: 'Demo Laptop 1',
+			price: '899.00',
+			discountedPrice: '799.00',
+			stock: 15,
+			reviewsCount: 0,
+			avgRating: '0.00',
+			description: 'Demo Laptop & PC product.'
+		},
+		{
+			title: 'Demo Watch 1',
+			price: '99.00',
+			discountedPrice: '79.00',
+			stock: 40,
+			reviewsCount: 0,
+			avgRating: '0.00',
+			description: 'Demo Watch product for seeding.'
+		},
+		{
+			title: 'Demo Watch 2',
+			price: '149.00',
+			discountedPrice: '119.00',
+			stock: 35,
+			reviewsCount: 0,
+			avgRating: '0.00',
+			description: 'Another demo Watch product.'
+		},
+	];
+
+	const inserted = await db
+		.insert(products)
+		.values(
+			demoProducts.map((p) => ({
+				title: p.title,
+				price: p.price,
+				discountedPrice: p.discountedPrice,
+				stock: p.stock,
+				reviewsCount: p.reviewsCount,
+				avgRating: p.avgRating,
+				description: p.description,
+			}))
+		)
+		.returning();
+
+	if (!inserted.length) return;
+
+	const BLANK_IMAGE_URL = '/images/products/blank.png';
+
+	for (const product of inserted) {
+		const imageRows = [
+			{ productId: product.id, url: BLANK_IMAGE_URL, kind: 'thumbnail' as const, sortOrder: 0 },
+			{ productId: product.id, url: BLANK_IMAGE_URL, kind: 'preview' as const, sortOrder: 0 },
+		];
+		await db.insert(productImages).values(imageRows);
+	}
+
+	const categoryMappings = [
+		{ title: 'Demo Desktop 1', categoryId: DEMO_CATEGORY_DESKTOP_ID },
+		{ title: 'Demo Desktop 2', categoryId: DEMO_CATEGORY_DESKTOP_ID },
+		{ title: 'Demo Laptop 1', categoryId: DEMO_CATEGORY_LAPTOP_PC_ID },
+		{ title: 'Demo Watch 1', categoryId: DEMO_CATEGORY_WATCH_ID },
+		{ title: 'Demo Watch 2', categoryId: DEMO_CATEGORY_WATCH_ID },
+	];
+
+	const productCategoryRows: Array<{ productId: number; categoryId: number }> = [];
+	for (const mapping of categoryMappings) {
+		const prod = inserted.find((p: any) => p.title === mapping.title);
+		if (prod) {
+			productCategoryRows.push({ productId: prod.id, categoryId: mapping.categoryId });
+		}
+	}
+
+	if (productCategoryRows.length) {
+		await db.insert(productCategories).values(productCategoryRows);
+	}
+} 
+
+// seed().catch((err) => {
+// 	console.error(err);
+// 	process.exit(1);
+// }); 
+
+addDemoProductsToExistingCategories().catch((err) => {
 	console.error(err);
 	process.exit(1);
-}); 
+});
