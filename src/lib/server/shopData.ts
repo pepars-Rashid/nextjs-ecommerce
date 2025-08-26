@@ -1,8 +1,12 @@
 "use server"
 import type { Product } from "@/types/product";
-import { listProducts } from "@/app/action";
+import { listProducts, countProducts } from "@/app/action";
 import type { ListProductsParams } from "@/app/action";
 
 export async function getShopData(params: ListProductsParams = {}): Promise<Product[]> {
 	return await listProducts(params);
+}
+
+export async function getProductsCount(params: { categoryIds?: number[] } = {}): Promise<number> {
+	return await countProducts(params);
 }

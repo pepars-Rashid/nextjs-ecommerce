@@ -39,7 +39,7 @@ function mapDbToProduct(
 }
 
 export async function listProducts(params: ListProductsParams = {}): Promise<Product[]> {
-	const { limit = 12, offset = 0, categoryIds, sort = "latest" } = params;
+	const { limit = 9, offset = 0, categoryIds, sort = "latest" } = params;
 
 	let base = db.select().from(products).limit(limit).offset(offset);
 	if (sort === "price_asc") {
@@ -121,4 +121,25 @@ export async function listCategoriesWithCounts(): Promise<CategoryWithCount[]> {
 		.leftJoin(productCategories, eq(categories.id, productCategories.categoryId))
 		.groupBy(categories.id, categories.name, categories.slug, categories.imgUrl);
 	return rows as any;
+}
+
+export async function countProducts(params: { categoryIds?: number[] } = {}): Promise<number> {
+	const { categoryIds } = params;
+	try {
+		if (!categoryIds || categoryIds.length === 0) {
+			const rows = await db.select({ value: sql<number>`count(*)` }).from(products);
+			return Number((rows?.[0] as any)?.value ?? 0);
+		}
+		// Count distinct products that belong to any of the given categories
+		const rows = await db
+			.select({ value: sql<number>`count(distinct ${products.id})` })
+			.from(products)
+			.leftJoin(productCategories, eq(products.id, productCategories.productId))
+			
+			.where(inArray(productCategories.categoryId, categoryIds));
+		return Number((rows?.[0] as any)?.value ?? 0);
+	} catch (error) {
+		console.error("Error counting products:", error);
+		return 0;
+	}
 }
