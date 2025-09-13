@@ -15,6 +15,8 @@ import PreviewSliderModal from "@/components/Common/PreviewSlider";
 
 import ScrollToTop from "@/components/Common/ScrollToTop";
 import PreLoader from "@/components/Common/PreLoader";
+import { StackProvider, StackTheme } from "@stackframe/stack";
+import { stackClientApp } from "@/stack-client";
 
 export default function RootLayout({
   children,
@@ -34,13 +36,16 @@ export default function RootLayout({
           <PreLoader />
         ) : (
           <>
+            <StackProvider app={stackClientApp}>
+              
             <ReduxProvider>
               <CartModalProvider>
                 <ModalProvider>
                   <PreviewSliderProvider>
                     <Header />
+                        <StackTheme>
                     {children}
-
+                        </StackTheme>
                     <QuickViewModal />
                     <CartSidebarModal />
                     <PreviewSliderModal />
@@ -48,6 +53,8 @@ export default function RootLayout({
                 </ModalProvider>
               </CartModalProvider>
             </ReduxProvider>
+              
+            </StackProvider>
             <ScrollToTop />
             <Footer />
           </>

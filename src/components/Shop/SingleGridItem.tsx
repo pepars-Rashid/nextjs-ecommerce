@@ -26,8 +26,11 @@ const SingleGridItem = ({ item }: { item: Product }) => {
       addItemToCart({
         ...item,
         quantity: 1,
-      })
+      }) // with pendding is true 
     );
+    // await data action the id product info
+    // dispatch to make pendding false
+    // catch(err){stop pendding false, statues false cuz it faild to fetchData}
   };
 
   const handleItemToWishList = () => {

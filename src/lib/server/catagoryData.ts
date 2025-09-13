@@ -1,6 +1,6 @@
 "use server"
 import type { Category } from "@/types/category";
-import { listCategoriesWithCounts } from "@/app/action";
+import { listCategoriesWithCounts } from "@/app/actions/action";
 
 export async function getCategoryData(): Promise<Category[]> {
 	const rows = await listCategoriesWithCounts();

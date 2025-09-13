@@ -1,5 +1,5 @@
 "use server"
-import { listCategoriesWithCounts } from "@/app/action";
+import { listCategoriesWithCounts } from "@/app/actions/action";
 
 export type SidebarCategory = {
 	name: string;

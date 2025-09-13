@@ -13,6 +13,7 @@ import {
   primaryKey,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { usersSync } from 'drizzle-orm/neon';
 
 // Enums
 export const imageKindEnum = pgEnum("image_kind", ["thumbnail", "preview"]);
@@ -26,31 +27,14 @@ export const orderStatusEnum = pgEnum("order_status", [
 ]);
 export const paymentStatusEnum = pgEnum("payment_status", ["unpaid", "paid", "refunded"]);
 
-// Users
-export const users = pgTable(
-    "users",
-  {
-    id: serial("id").primaryKey(),
-    email: varchar("email", { length: 255 }).notNull(),
-    passwordHash: varchar("password_hash", { length: 255 }).notNull(),
-    name: varchar("name", { length: 255 }),
-    role: varchar("role", { length: 50 }).notNull().default("user"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => ({
-    emailUnique: uniqueIndex("users_email_unique").on(t.email),
-  })
-);
-
-// Addresses
+// NOTE: Local users table removed in favor of external auth (Neon/Stack Auth).
+// Use ownerId (text) to store the external user identifier from the auth provider and
+// reference it via usersSync per Drizzle Neon docs.
 export const addresses = pgTable(
   "addresses",
   {
     id: serial("id").primaryKey(),
-    userId: integer("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    ownerId: text("owner_id").notNull().references(() => usersSync.id),
     fullName: varchar("full_name", { length: 255 }),
     line1: varchar("line1", { length: 255 }).notNull(),
     line2: varchar("line2", { length: 255 }),
@@ -63,7 +47,7 @@ export const addresses = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    userIdx: index("addresses_user_id_idx").on(t.userId),
+    ownerIdx: index("addresses_owner_id_idx").on(t.ownerId),
   })
 );
 
@@ -137,17 +121,15 @@ export const reviews = pgTable(
     productId: integer("product_id")
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
-    userId: integer("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    ownerId: text("owner_id").notNull().references(() => usersSync.id),
     rating: integer("rating").notNull(), // validate 1..5 in app or with a CHECK if you prefer
     comment: text("comment"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     productIdx: index("reviews_product_id_idx").on(t.productId),
-    userIdx: index("reviews_user_id_idx").on(t.userId),
-    userProductUnique: uniqueIndex("reviews_user_product_unique").on(t.userId, t.productId),
+    ownerIdx: index("reviews_owner_id_idx").on(t.ownerId),
+    ownerProductUnique: uniqueIndex("reviews_owner_product_unique").on(t.ownerId, t.productId),
   })
 );
 
@@ -156,15 +138,13 @@ export const carts = pgTable(
   "carts",
   {
     id: serial("id").primaryKey(),
-    userId: integer("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    ownerId: text("owner_id").notNull().references(() => usersSync.id),
     status: cartStatusEnum("status").notNull().default("active"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    userIdx: index("carts_user_id_idx").on(t.userId),
+    ownerIdx: index("carts_owner_id_idx").on(t.ownerId),
   })
 );
 
@@ -192,18 +172,16 @@ export const cartItems = pgTable(
   })
 );
 
-// Wishlists (one per user)
+// Wishlists (one per owner)
 export const wishlists = pgTable(
   "wishlists",
   {
     id: serial("id").primaryKey(),
-    userId: integer("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    ownerId: text("owner_id").notNull().references(() => usersSync.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    userUnique: uniqueIndex("wishlists_user_id_unique").on(t.userId),
+    ownerUnique: uniqueIndex("wishlists_owner_id_unique").on(t.ownerId),
   })
 );
 
@@ -235,9 +213,7 @@ export const orders = pgTable(
   "orders",
   {
     id: serial("id").primaryKey(),
-    userId: integer("user_id")
-      .notNull()
-      .references(() => users.id),
+    ownerId: text("owner_id").notNull().references(() => usersSync.id),
     status: orderStatusEnum("status").notNull().default("pending"),
     subtotalAmount: numeric("subtotal_amount", { precision: 10, scale: 2 }).notNull(),
     discountAmount: numeric("discount_amount", { precision: 10, scale: 2 }).notNull().default("0"),
@@ -250,7 +226,7 @@ export const orders = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    userIdx: index("orders_user_id_idx").on(t.userId),
+    ownerIdx: index("orders_owner_id_idx").on(t.ownerId),
   })
 );
 
@@ -278,23 +254,7 @@ export const orderItems = pgTable(
 );
 
 // Relations
-export const usersRelations = relations(users, ({ many, one }) => ({
-  addresses: many(addresses),
-  carts: many(carts),
-  wishlist: one(wishlists, {
-    fields: [users.id],
-    references: [wishlists.userId],
-  }),
-  reviews: many(reviews),
-  orders: many(orders),
-}));
-
-export const addressesRelations = relations(addresses, ({ one }) => ({
-  user: one(users, {
-    fields: [addresses.userId],
-    references: [users.id],
-  }),
-}));
+export const addressesRelations = relations(addresses, ({}) => ({}));
 
 export const productsRelations = relations(products, ({ many }) => ({
   images: many(productImages),
@@ -329,11 +289,9 @@ export const productCategoriesRelations = relations(productCategories, ({ one })
 
 export const reviewsRelations = relations(reviews, ({ one }) => ({
   product: one(products, { fields: [reviews.productId], references: [products.id] }),
-  user: one(users, { fields: [reviews.userId], references: [users.id] }),
 }));
 
-export const cartsRelations = relations(carts, ({ one, many }) => ({
-  user: one(users, { fields: [carts.userId], references: [users.id] }),
+export const cartsRelations = relations(carts, ({ many }) => ({
   items: many(cartItems),
 }));
 
@@ -342,8 +300,7 @@ export const cartItemsRelations = relations(cartItems, ({ one }) => ({
   product: one(products, { fields: [cartItems.productId], references: [products.id] }),
 }));
 
-export const wishlistsRelations = relations(wishlists, ({ one, many }) => ({
-  user: one(users, { fields: [wishlists.userId], references: [users.id] }),
+export const wishlistsRelations = relations(wishlists, ({ many }) => ({
   items: many(wishlistItems),
 }));
 
@@ -353,7 +310,6 @@ export const wishlistItemsRelations = relations(wishlistItems, ({ one }) => ({
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
-  user: one(users, { fields: [orders.userId], references: [users.id] }),
   shippingAddress: one(addresses, {
     fields: [orders.shippingAddressId],
     references: [addresses.id],
