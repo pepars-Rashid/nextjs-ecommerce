@@ -3,20 +3,29 @@ import React, { useEffect, useState } from "react";
 
 import { useCartModalContext } from "@/app/context/CartSidebarModalContext";
 import {
-  removeItemFromCart,
+  removeCartItemAsync,
   selectTotalPrice,
+  fetchCartItems,
 } from "@/redux/features/cart-slice";
 import { useAppSelector } from "@/redux/store";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import SingleItem from "./SingleItem";
 import Link from "next/link";
 import EmptyCart from "./EmptyCart";
 
 const CartSidebarModal = () => {
   const { isCartModalOpen, closeCartModal } = useCartModalContext();
+  const dispatch = useDispatch();
+  
   const cartItems = useAppSelector((state) => state.cartReducer.items);
-
+  const cartStatus = useAppSelector((state) => state.cartReducer.status);
+  const removeStatus = useAppSelector((state) => state.cartReducer.removeStatus);
+  const cartError = useAppSelector((state) => state.cartReducer.error);
   const totalPrice = useSelector(selectTotalPrice);
+  
+  const isLoading = cartStatus === 'pending';
+  const hasError = cartStatus === 'failed' || removeStatus === 'failed';
+  const isRemoving = removeStatus === 'pending';
 
   useEffect(() => {
     // closing modal while clicking outside
@@ -76,13 +85,32 @@ const CartSidebarModal = () => {
 
           <div className="h-[66vh] overflow-y-auto no-scrollbar">
             <div className="flex flex-col gap-6">
-              {/* <!-- cart item --> */}
-              {cartItems.length > 0 ? (
+              {/* <!-- loading state --> */}
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <div className="w-8 h-8 border-4 border-blue border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="text-gray-500">Loading cart items...</p>
+                </div>
+              ) : hasError ? (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <svg className="w-12 h-12 text-red-500 mb-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-red-600 font-medium mb-2">Network Error</p>
+                  <p className="text-gray-500 mb-4">Please try again later</p>
+                  <button 
+                    onClick={() => dispatch(fetchCartItems() as any)}
+                    className="px-4 py-2 bg-blue text-white rounded hover:bg-blue-dark"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              ) : cartItems.length > 0 ? (
                 cartItems.map((item, key) => (
                   <SingleItem
                     key={key}
                     item={item}
-                    removeItemFromCart={removeItemFromCart}
+                    removeItemFromCart={removeCartItemAsync}
                   />
                 ))
               ) : (

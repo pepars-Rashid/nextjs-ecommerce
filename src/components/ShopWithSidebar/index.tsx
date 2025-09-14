@@ -86,7 +86,7 @@ const ShopWithSidebar = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []); // Added missing dependency array
+  }, [productSidebar]); // Added missing dependency array
 
   return (
     <>

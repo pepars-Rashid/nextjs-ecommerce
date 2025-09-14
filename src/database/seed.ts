@@ -1,7 +1,6 @@
 "use server"
 import { db } from './db.js';
 import {
-	users,
 	products,
 	productImages,
 	categories,
@@ -36,10 +35,10 @@ async function seed() {
 	];
 
 	// Best-effort idempotency for users based on unique email
-	await db
-		.insert(users)
-		.values(userData)
-		.onConflictDoNothing({ target: [users.email] });
+	// await db
+	// 	.insert(users)
+	// 	.values(userData)
+	// 	.onConflictDoNothing({ target: [users.email] });
 
 	// 2) Products (aligned with src/components/Shop/shopData.ts)
 	const productSeed = [

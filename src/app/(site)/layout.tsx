@@ -17,6 +17,7 @@ import ScrollToTop from "@/components/Common/ScrollToTop";
 import PreLoader from "@/components/Common/PreLoader";
 import { StackProvider, StackTheme } from "@stackframe/stack";
 import { stackClientApp } from "@/stack-client";
+import { Toaster } from "react-hot-toast";
 
 export default function RootLayout({
   children,
@@ -45,6 +46,7 @@ export default function RootLayout({
                     <Header />
                         <StackTheme>
                     {children}
+                    <Toaster/>
                         </StackTheme>
                     <QuickViewModal />
                     <CartSidebarModal />

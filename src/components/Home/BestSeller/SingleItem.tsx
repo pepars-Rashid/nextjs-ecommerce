@@ -3,9 +3,10 @@ import React from "react";
 import { Product } from "@/types/product";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/redux/store";
+import { AppDispatch, useAppSelector } from "@/redux/store";
 import { updateQuickView } from "@/redux/features/quickView-slice";
-import { addItemToCart } from "@/redux/features/cart-slice";
+import { addCartItemAsync } from "@/redux/features/cart-slice";
+import toast from "react-hot-toast";
 import Image from "next/image";
 import Link from "next/link";
 import { addItemToWishlist } from "@/redux/features/wishlist-slice";
@@ -13,20 +14,25 @@ import { addItemToWishlist } from "@/redux/features/wishlist-slice";
 const SingleItem = ({ item }: { item: Product }) => {
   const { openModal } = useModalContext();
   const dispatch = useDispatch<AppDispatch>();
+  const addStatus = useAppSelector((state) => state.cartReducer.addStatus);
+  const isAddingToCart = addStatus === 'pending';
 
   // update the QuickView state
   const handleQuickViewUpdate = () => {
     dispatch(updateQuickView({ ...item }));
   };
 
-  // add to cart
-  const handleAddToCart = () => {
-    dispatch(
-      addItemToCart({
-        ...item,
+  // add to cart with async action
+  const handleAddToCart = async () => {
+    try {
+      await dispatch(addCartItemAsync({
+        productId: item.id,
         quantity: 1,
-      })
-    );
+      })).unwrap();
+      toast.success('Item added to cart!');
+    } catch (error) {
+      toast.error('Failed to add item to cart. Please try again.');
+    }
   };
 
   const handleItemToWishList = () => {
@@ -128,19 +134,27 @@ const SingleItem = ({ item }: { item: Product }) => {
           </button>
 
           <button
-            onClick={() => handleAddToCart()}
+            onClick={handleAddToCart}
+            disabled={isAddingToCart}
             aria-label="button for add to cart"
             id="addCartOne"
-            className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-white hover:bg-blue"
+            className={`flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 ${
+              isAddingToCart 
+                ? 'text-gray-400 bg-gray-200 cursor-not-allowed' 
+                : 'text-dark bg-white hover:text-white hover:bg-blue'
+            }`}
           >
-            <svg
-              className="fill-current"
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            {isAddingToCart ? (
+              <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <svg
+                className="fill-current"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
@@ -159,7 +173,8 @@ const SingleItem = ({ item }: { item: Product }) => {
                 d="M11.0001 14.5001C10.1716 14.5001 9.50005 13.8285 9.50005 13.0001C9.50005 12.1716 10.1716 11.5001 11.0001 11.5001C11.8285 11.5001 12.5001 12.1716 12.5001 13.0001C12.5001 13.8285 11.8285 14.5001 11.0001 14.5001ZM10.5001 13.0001C10.5001 13.2762 10.7239 13.5001 11.0001 13.5001C11.2762 13.5001 11.5001 13.2762 11.5001 13.0001C11.5001 12.7239 11.2762 12.5001 11.0001 12.5001C10.7239 12.5001 10.5001 12.7239 10.5001 13.0001Z"
                 fill=""
               />
-            </svg>
+              </svg>
+            )}
           </button>
 
           <button

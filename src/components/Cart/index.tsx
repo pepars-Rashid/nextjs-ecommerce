@@ -1,14 +1,44 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import Discount from "./Discount";
 import OrderSummary from "./OrderSummary";
 import { useAppSelector } from "@/redux/store";
+import { useDispatch } from "react-redux";
+import { fetchCartItems, clearCartAsync } from "@/redux/features/cart-slice";
 import SingleItem from "./SingleItem";
 import Breadcrumb from "../Common/Breadcrumb";
 import Link from "next/link";
+import { useUser } from "@stackframe/stack";
+import toast from "react-hot-toast";
 
 const Cart = () => {
+  const dispatch = useDispatch();
+  const user = useUser();
+  
   const cartItems = useAppSelector((state) => state.cartReducer.items);
+  const cartStatus = useAppSelector((state) => state.cartReducer.status);
+  const clearStatus = useAppSelector((state) => state.cartReducer.clearStatus);
+  const cartError = useAppSelector((state) => state.cartReducer.error);
+  
+  const isLoading = cartStatus === 'pending';
+  const hasError = cartStatus === 'failed';
+  const isClearingCart = clearStatus === 'pending';
+  
+  // Fetch cart items when user is available
+  useEffect(() => {
+    if (user && cartStatus === 'idle') {
+      dispatch(fetchCartItems() as any);
+    }
+  }, [user, dispatch, cartStatus]);
+  
+  const handleClearCart = async () => {
+    try {
+      await dispatch(clearCartAsync() as any).unwrap();
+      toast.success('Cart cleared successfully!');
+    } catch (error) {
+      toast.error('Failed to clear cart. Please try again.');
+    }
+  };
 
   return (
     <>
@@ -17,12 +47,56 @@ const Cart = () => {
         <Breadcrumb title={"Cart"} pages={["Cart"]} />
       </section>
       {/* <!-- ===== Breadcrumb Section End ===== --> */}
-      {cartItems.length > 0 ? (
+      {isLoading ? (
+        <section className="py-20 bg-gray-2">
+          <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
+            <div className="flex flex-col items-center justify-center h-64">
+              <div className="w-12 h-12 border-4 border-blue border-t-transparent rounded-full animate-spin mb-4"></div>
+              <p className="text-gray-500 text-lg">Loading your cart...</p>
+            </div>
+          </div>
+        </section>
+      ) : hasError ? (
+        <section className="py-20 bg-gray-2">
+          <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
+            <div className="flex flex-col items-center justify-center h-64 text-center">
+              <svg className="w-16 h-16 text-red-500 mb-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <p className="text-red-600 font-medium text-xl mb-2">Network Error</p>
+              <p className="text-gray-500 mb-6">Failed to load your cart. Please try again.</p>
+              <button 
+                onClick={() => dispatch(fetchCartItems() as any)}
+                className="px-6 py-3 bg-blue text-white rounded-md hover:bg-blue-dark transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : cartItems.length > 0 ? (
         <section className="overflow-hidden py-20 bg-gray-2">
           <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
             <div className="flex flex-wrap items-center justify-between gap-5 mb-7.5">
               <h2 className="font-medium text-dark text-2xl">Your Cart</h2>
-              <button className="text-blue">Clear Shopping Cart</button>
+              <button 
+                onClick={handleClearCart}
+                disabled={isClearingCart}
+                className={`flex items-center gap-2 ${
+                  isClearingCart 
+                    ? 'text-gray-400 cursor-not-allowed' 
+                    : 'text-blue hover:text-blue-dark'
+                }`}
+              >
+                {isClearingCart ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                    Clearing...
+                  </>
+                ) : (
+                  'Clear Shopping Cart'
+                )}
+              </button>
             </div>
 
             <div className="bg-white rounded-[10px] shadow-1">

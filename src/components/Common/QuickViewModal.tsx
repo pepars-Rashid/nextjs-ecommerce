@@ -3,8 +3,9 @@ import React, { useEffect, useState } from "react";
 
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { AppDispatch, useAppSelector } from "@/redux/store";
-import { addItemToCart } from "@/redux/features/cart-slice";
+import { addCartItemAsync } from "@/redux/features/cart-slice";
 import { useDispatch } from "react-redux";
+import toast from "react-hot-toast";
 import Image from "next/image";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { resetQuickView } from "@/redux/features/quickView-slice";
@@ -14,31 +15,34 @@ const QuickViewModal = () => {
   const { isModalOpen, closeModal } = useModalContext();
   const { openPreviewModal } = usePreviewSlider();
   const [quantity, setQuantity] = useState(1);
-
   const dispatch = useDispatch<AppDispatch>();
 
   // get the product data
   const product = useAppSelector((state) => state.quickViewReducer.value);
+  const addStatus = useAppSelector((state) => state.cartReducer.addStatus);
+  const isAddingToCart = addStatus === 'pending';
 
   const [activePreview, setActivePreview] = useState(0);
 
   // preview modal
   const handlePreviewSlider = () => {
     dispatch(updateproductDetails(product));
-
     openPreviewModal();
   };
 
-  // add to cart
-  const handleAddToCart = () => {
-    dispatch(
-      addItemToCart({
-        ...product,
+  // add to cart with async action
+  const handleAddToCart = async () => {
+    try {
+      await dispatch(addCartItemAsync({
+        productId: product.id,
         quantity,
-      })
-    );
-
-    closeModal();
+      })).unwrap();
+      
+      toast.success('Item added to cart!');
+      closeModal();
+    } catch (error) {
+      toast.error('Failed to add item to cart. Please try again.');
+    }
   };
 
   useEffect(() => {
@@ -399,12 +403,22 @@ const QuickViewModal = () => {
 
               <div className="flex flex-wrap items-center gap-4">
                 <button
-                  disabled={quantity === 0 && true}
-                  onClick={() => handleAddToCart()}
-                  className={`inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark
-                  `}
+                  disabled={quantity === 0 || isAddingToCart}
+                  onClick={handleAddToCart}
+                  className={`inline-flex items-center gap-2 font-medium py-3 px-7 rounded-md ease-out duration-200 ${
+                    isAddingToCart || quantity === 0
+                      ? 'bg-blue-light-2 text-white cursor-not-allowed'
+                      : 'bg-blue text-white hover:bg-blue-dark'
+                  }`}
                 >
-                  Add to Cart
+                  {isAddingToCart ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Adding...
+                    </>
+                  ) : (
+                    'Add to Cart'
+                  )}
                 </button>
 
                 <button

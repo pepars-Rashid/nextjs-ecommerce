@@ -1,26 +1,30 @@
 import React from "react";
-import { AppDispatch } from "@/redux/store";
+import { AppDispatch, useAppSelector } from "@/redux/store";
 import { useDispatch } from "react-redux";
-
 import { removeItemFromWishlist } from "@/redux/features/wishlist-slice";
-import { addItemToCart } from "@/redux/features/cart-slice";
-
+import { addCartItemAsync } from "@/redux/features/cart-slice";
+import toast from "react-hot-toast";
 import Image from "next/image";
 
 const SingleItem = ({ item }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const addStatus = useAppSelector((state) => state.cartReducer.addStatus);
+  const isAddingToCart = addStatus === 'pending';
 
   const handleRemoveFromWishlist = () => {
     dispatch(removeItemFromWishlist(item.id));
   };
 
-  const handleAddToCart = () => {
-    dispatch(
-      addItemToCart({
-        ...item,
+  const handleAddToCart = async () => {
+    try {
+      await dispatch(addCartItemAsync({
+        productId: item.id,
         quantity: 1,
-      })
-    );
+      })).unwrap();
+      toast.success('Item added to cart!');
+    } catch (error) {
+      toast.error('Failed to add item to cart. Please try again.');
+    }
   };
 
   return (
@@ -104,10 +108,22 @@ const SingleItem = ({ item }) => {
 
       <div className="min-w-[150px] flex justify-end">
         <button
-          onClick={() => handleAddToCart()}
-          className="inline-flex text-dark hover:text-white bg-gray-1 border border-gray-3 py-2.5 px-6 rounded-md ease-out duration-200 hover:bg-blue hover:border-gray-3"
+          onClick={handleAddToCart}
+          disabled={isAddingToCart}
+          className={`inline-flex items-center gap-2 py-2.5 px-6 rounded-md ease-out duration-200 ${
+            isAddingToCart 
+              ? 'text-gray-400 bg-gray-200 border border-gray-300 cursor-not-allowed'
+              : 'text-dark hover:text-white bg-gray-1 border border-gray-3 hover:bg-blue hover:border-gray-3'
+          }`}
         >
-          Add to Cart
+          {isAddingToCart ? (
+            <>
+              <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+              Adding...
+            </>
+          ) : (
+            'Add to Cart'
+          )}
         </button>
       </div>
     </div>

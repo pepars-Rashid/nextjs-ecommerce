@@ -5,8 +5,8 @@ import CustomSelect from "./CustomSelect";
 import { menuData } from "./menuData";
 import Dropdown from "./Dropdown";
 import { useAppSelector } from "@/redux/store";
-import { useSelector } from "react-redux";
-import { selectTotalPrice } from "@/redux/features/cart-slice";
+import { useSelector, useDispatch } from "react-redux";
+import { selectTotalPrice, fetchCartItems } from "@/redux/features/cart-slice";
 import { useCartModalContext } from "@/app/context/CartSidebarModalContext";
 import Image from "next/image";
 import { UserButton } from "@stackframe/stack";
@@ -18,9 +18,31 @@ const Header = () => {
   const [stickyMenu, setStickyMenu] = useState(false);
   const { openCartModal } = useCartModalContext();
   const user = useUser();
+  const dispatch = useDispatch();
 
   const product = useAppSelector((state) => state.cartReducer.items);
   const totalPrice = useSelector(selectTotalPrice);
+  const cartStatus = useAppSelector((state) => state.cartReducer.status);
+  const addStatus = useAppSelector((state) => state.cartReducer.addStatus);
+  const updateStatus = useAppSelector((state) => state.cartReducer.updateStatus);
+  const removeStatus = useAppSelector((state) => state.cartReducer.removeStatus);
+  const clearStatus = useAppSelector((state) => state.cartReducer.clearStatus);
+  const cartError = useAppSelector((state) => state.cartReducer.error);
+  
+  // Check if any cart operation is loading
+  const isCartLoading = cartStatus === 'pending' || addStatus === 'pending' || 
+                       updateStatus === 'pending' || removeStatus === 'pending' || 
+                       clearStatus === 'pending';
+  const hasCartError = cartStatus === 'failed' || addStatus === 'failed' || 
+                      updateStatus === 'failed' || removeStatus === 'failed' || 
+                      clearStatus === 'failed';
+
+  // Fetch cart items when user is available and cart is not loaded
+  useEffect(() => {
+    if (user && cartStatus === 'idle') {
+      dispatch(fetchCartItems() as any);
+    }
+  }, [user, dispatch, cartStatus]);
 
   const handleOpenCartModal = () => {
     openCartModal();
@@ -233,7 +255,18 @@ const Header = () => {
                       cart
                     </span>
                     <p className="font-medium text-custom-sm text-dark">
-                      ${totalPrice}
+                      {isCartLoading ? (
+                        <span className="inline-block animate-pulse bg-blue-light-2 rounded w-10 h-4"></span>
+                      ) : hasCartError ? (
+                        <span className="text-red-500 flex items-center gap-1">
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                            <path d="M6 0L7.854 3.708L12 4.309L9 7.222L9.708 11.309L6 9.472L2.292 11.309L3 7.222L0 4.309L4.146 3.708L6 0Z"/>
+                          </svg>
+                          Error
+                        </span>
+                      ) : (
+                        `$${totalPrice}`
+                      )}
                     </p>
                   </div>
                 </button>

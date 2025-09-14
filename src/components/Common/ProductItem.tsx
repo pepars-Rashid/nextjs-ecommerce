@@ -4,31 +4,38 @@ import Image from "next/image";
 import { Product } from "@/types/product";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { updateQuickView } from "@/redux/features/quickView-slice";
-import { addItemToCart } from "@/redux/features/cart-slice";
+import { addCartItemAsync } from "@/redux/features/cart-slice";
 import { addItemToWishlist } from "@/redux/features/wishlist-slice";
 import { updateproductDetails } from "@/redux/features/product-details";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/redux/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, useAppSelector } from "@/redux/store";
+import toast from "react-hot-toast";
 import Link from "next/link";
 
 const ProductItem = ({ item }: { item: Product }) => {
   const { openModal } = useModalContext();
-
   const dispatch = useDispatch<AppDispatch>();
+  
+  // Get cart loading state
+  const addStatus = useAppSelector((state) => state.cartReducer.addStatus);
+  const isAddingToCart = addStatus === 'pending';
 
   // update the QuickView state
   const handleQuickViewUpdate = () => {
     dispatch(updateQuickView({ ...item }));
   };
 
-  // add to cart
-  const handleAddToCart = () => {
-    dispatch(
-      addItemToCart({
-        ...item,
+  // add to cart with async action and toast notifications
+  const handleAddToCart = async () => {
+    try {
+      await dispatch(addCartItemAsync({
+        productId: item.id,
         quantity: 1,
-      })
-    );
+      })).unwrap();
+      toast.success('Item added to cart!');
+    } catch (error) {
+      toast.error('Failed to add item to cart. Please try again.');
+    }
   };
 
   const handleItemToWishList = () => {
@@ -84,10 +91,22 @@ const ProductItem = ({ item }: { item: Product }) => {
           </button>
 
           <button
-            onClick={() => handleAddToCart()}
-            className="inline-flex font-medium text-custom-sm py-[7px] px-5 rounded-[5px] bg-blue text-white ease-out duration-200 hover:bg-blue-dark"
+            onClick={handleAddToCart}
+            disabled={isAddingToCart}
+            className={`inline-flex font-medium text-custom-sm py-[7px] px-5 rounded-[5px] ease-out duration-200 ${
+              isAddingToCart 
+                ? 'bg-blue-light-2 text-white cursor-not-allowed' 
+                : 'bg-blue text-white hover:bg-blue-dark'
+            }`}
           >
-            Add to cart
+            {isAddingToCart ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Adding...
+              </div>
+            ) : (
+              'Add to cart'
+            )}
           </button>
 
           <button

@@ -217,11 +217,16 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 				.where(eq(cartItems.id, existingItem[0].id));
 		} else {
 			// Add new item
+			const imgs = await db
+				.select({ url: productImages.url, kind: productImages.kind, sortOrder: productImages.sortOrder })
+				.from(productImages)
+				.where(eq(productImages.productId, productId));
+
 			await db.insert(cartItems).values({
 				cartId: userCart[0].id,
 				productId,
 				titleSnapshot: product[0].title,
-				imgSnapshot: "", // You might want to get the first image here
+				imgSnapshot: imgs[0].url, // You might want to get the first image here
 				unitPrice: product[0].price,
 				unitDiscountedPrice: product[0].discountedPrice,
 				quantity,

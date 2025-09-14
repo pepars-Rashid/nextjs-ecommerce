@@ -1,13 +1,21 @@
 import React from "react";
 import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/redux/store";
+import { AppDispatch, useAppSelector } from "@/redux/store";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 const SingleItem = ({ item, removeItemFromCart }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const removeStatus = useAppSelector((state) => state.cartReducer.removeStatus);
+  const isRemoving = removeStatus === 'pending';
 
-  const handleRemoveFromCart = () => {
-    dispatch(removeItemFromCart(item.id));
+  const handleRemoveFromCart = async () => {
+    try {
+      await dispatch(removeItemFromCart(item.id)).unwrap();
+      toast.success('Item removed from cart!');
+    } catch (error) {
+      toast.error('Failed to remove item. Please try again.');
+    }
   };
 
   return (
@@ -27,17 +35,25 @@ const SingleItem = ({ item, removeItemFromCart }) => {
 
       <button
         onClick={handleRemoveFromCart}
+        disabled={isRemoving}
         aria-label="button for remove product from cart"
-        className="flex items-center justify-center rounded-lg max-w-[38px] w-full h-9.5 bg-gray-2 border border-gray-3 text-dark ease-out duration-200 hover:bg-red-light-6 hover:border-red-light-4 hover:text-red"
+        className={`flex items-center justify-center rounded-lg max-w-[38px] w-full h-9.5 border ease-out duration-200 ${
+          isRemoving 
+            ? 'bg-gray-400 border-gray-400 text-gray-600 cursor-not-allowed' 
+            : 'bg-gray-2 border-gray-3 text-dark hover:bg-red-light-6 hover:border-red-light-4 hover:text-red'
+        }`}
       >
-        <svg
-          className="fill-current"
-          width="22"
-          height="22"
-          viewBox="0 0 22 22"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
+        {isRemoving ? (
+          <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+        ) : (
+          <svg
+            className="fill-current"
+            width="22"
+            height="22"
+            viewBox="0 0 22 22"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
           <path
             fillRule="evenodd"
             clipRule="evenodd"
@@ -56,7 +72,8 @@ const SingleItem = ({ item, removeItemFromCart }) => {
             d="M13.3601 9.39928C13.7379 9.43706 14.0135 9.77397 13.9758 10.1518L13.5174 14.7351C13.4796 15.1129 13.1427 15.3886 12.7649 15.3508C12.3871 15.313 12.1115 14.9761 12.1492 14.5983L12.6076 10.015C12.6454 9.63715 12.9823 9.3615 13.3601 9.39928Z"
             fill=""
           />
-        </svg>
+          </svg>
+        )}
       </button>
     </div>
   );
