@@ -1,6 +1,6 @@
 "use server"
 import { db } from "@/database/db";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, count, countDistinct, desc, eq, inArray, sql } from "drizzle-orm";
 import {
 	products,
 	productImages,
@@ -18,87 +18,109 @@ export type ListProductsParams = {
 	limit?: number;
 	offset?: number;
 	categoryIds?: number[];
-	sort?: "latest" | "price_asc" | "price_desc";
+	sort?: "latest" | "price_asc" | "price_desc" | "latest" | "oldest";
 };
 
-function mapDbToProduct(
-	p: any,
-	images: Array<{ url: string; kind: "thumbnail" | "preview"; sortOrder: number }>
-): Product {
-	const thumbs = images
-		.filter((i) => i.kind === "thumbnail")
-		.sort((a, b) => a.sortOrder - b.sortOrder)
-		.map((i) => i.url);
-	const previews = images
-		.filter((i) => i.kind === "preview")
-		.sort((a, b) => a.sortOrder - b.sortOrder)
-		.map((i) => i.url);
-	return {
-		id: Number(p.id),
-		title: p.title,
-		price: Number(p.price),
-		discountedPrice: Number(p.discountedPrice),
-		reviews: Number(p.reviewsCount ?? 0),
-		imgs: { thumbnails: thumbs, previews },
-	};
+export interface ListedProduct {
+  id: number;
+	title: string;
+	price: string;
+	discountedPrice: string;
+	reviewsCount: number;
+	description: string;
+	images: {
+		url: string;
+		kind: "thumbnail" | "preview";
+	}[];
 }
 
-export async function listProducts(params: ListProductsParams = {}): Promise<Product[]> {
-	const { limit = 9, offset = 0, categoryIds, sort = "latest" } = params;
+export async function listProducts(params: ListProductsParams = {}): Promise<ListedProduct[]> {
+  try {
+	const { 
+	  limit = 9, 
+	  offset = 0, 
+	  categoryIds = [], 
+	  sort = "latest" 
+	} = params;
 
-	let base = db.select().from(products).limit(limit).offset(offset);
-	if (sort === "price_asc") {
-		// @ts-expect-error drizzle types for orderBy on js schema
-		base = base.orderBy(products.price.asc());
-	} else if (sort === "price_desc") {
-		// @ts-expect-error drizzle types for orderBy on js schema
-		base = base.orderBy(products.price);
-	} else {
-		// latest by id desc as a proxy
-		// @ts-expect-error
-		base = base.orderBy(products.id);
+	// Validate numeric parameters
+	if (limit < 1 || limit > 20) {
+	  throw new Error("Limit must be between 1 and 20");
+	}
+	
+	if (offset < 0) {
+	  throw new Error("Offset must be non-negative");
 	}
 
-	if (categoryIds && categoryIds.length) {
-		try {
-			const pc = await db
-				.select({ productId: productCategories.productId })
-				.from(productCategories)
-				.where(inArray(productCategories.categoryId, categoryIds));
-			const allowedIds = pc.map((r: any) => r.productId);
-			if (!allowedIds.length) return [];
-			// @ts-expect-error drizzle types for complex queries
-			base = db.select().from(products).where(inArray(products.id, allowedIds)).limit(limit).offset(offset);
-		} catch (error) {
-			console.error('Error filtering by categories:', error);
-			return [];
-		}
+	// Build orderBy clause
+	let orderByClause;
+	switch (sort) {
+	  case "price_asc": orderByClause = [asc(products.discountedPrice)];
+		break;
+	  case "price_desc": orderByClause = [desc(products.discountedPrice)];
+		break;
+	  case "latest": orderByClause = [desc(products.id)];
+		break;
+	  case "oldest": orderByClause = [asc(products.id)];
+		break;
+	  default: orderByClause = [desc(products.id)];
+		break;
 	}
 
-	try {
-		const rows = await base;
-		if (rows.length === 0) return [];
-		const ids = rows.map((r: any) => r.id);
-		const imgs = await db
-			.select({
-				productId: productImages.productId,
-				url: productImages.url,
-				kind: productImages.kind,
-				sortOrder: productImages.sortOrder,
-			})
-			.from(productImages)
-			.where(inArray(productImages.productId, ids));
-		const productIdToImages = new Map<number, Array<{ url: string; kind: "thumbnail" | "preview"; sortOrder: number }>>();
-		for (const im of imgs as any[]) {
-			const list = productIdToImages.get(im.productId) ?? [];
-			list.push({ url: im.url, kind: im.kind, sortOrder: im.sortOrder });
-			productIdToImages.set(im.productId, list);
-		}
-		return rows.map((p: any) => mapDbToProduct(p, productIdToImages.get(p.id) ?? []));
-	} catch (error) {
-		console.error('Error fetching products:', error);
+	// Build where clause for categories
+	let whereClause = undefined;
+	
+	if (categoryIds && categoryIds.length > 0) {
+	  const categoryProducts = await db
+		.select({ productId: productCategories.productId })
+		.from(productCategories)
+		.where(inArray(productCategories.categoryId, categoryIds))
+		.catch(error => {
+		  throw new Error(`Failed to fetch category products: ${error.message}`);
+		});
+
+	  const allowedProductIds = categoryProducts.map(r => r.productId);
+	  
+	  if (allowedProductIds.length === 0) {
 		return [];
+	  }
+	  
+	  whereClause = inArray(products.id, allowedProductIds);
 	}
+
+	const productsWithImages = await db.query.products.findMany({
+	  columns: {
+		id: true,
+		title: true,
+		price: true,
+		discountedPrice: true,
+		reviewsCount: true,
+		description: true,
+	  },
+	  limit: limit,
+	  offset: offset,
+	  where: whereClause,
+	  with: {
+		images: {
+		  columns: {
+			url: true,
+			kind: true,
+		  },
+		  orderBy: (images, { asc }) => [asc(images.sortOrder)],
+		},
+	  },
+	  orderBy: orderByClause,
+	}).catch(error => {
+	  throw new Error(`Failed to fetch products: ${error.message}`);
+	});
+
+	console.log("Fetched products:", productsWithImages);
+	return productsWithImages as ListedProduct[];
+
+  } catch (error) {
+	console.error("Error in listProducts:", error);
+	return [];
+  }
 }
 
 export async function getProduct(productId: number): Promise<Product | null> {
@@ -108,7 +130,7 @@ export async function getProduct(productId: number): Promise<Product | null> {
 		.select({ url: productImages.url, kind: productImages.kind, sortOrder: productImages.sortOrder })
 		.from(productImages)
 		.where(eq(productImages.productId, productId));
-	return mapDbToProduct(row[0] as any, imgs as any);
+	return { ...(row[0] as any), images: imgs };
 }
 
 export type CategoryWithCount = { id: number; name: string; slug: string; productCount: number; imgUrl: string };
@@ -120,12 +142,12 @@ export async function listCategoriesWithCounts(): Promise<CategoryWithCount[]> {
 			name: categories.name,
 			slug: categories.slug,
 			imgUrl: categories.imgUrl,
-			productCount: sql<number>`count(${productCategories.productId})`,
+			productCount: count(productCategories.productId).mapWith(Number),
 		})
 		.from(categories)
 		.leftJoin(productCategories, eq(categories.id, productCategories.categoryId))
 		.groupBy(categories.id, categories.name, categories.slug, categories.imgUrl);
-	return rows as any;
+	return rows as CategoryWithCount[];
 }
 
 export async function countProducts(params: { categoryIds?: number[] } = {}): Promise<number> {
@@ -137,7 +159,7 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 		}
 		// Count distinct products that belong to any of the given categories
 		const rows = await db
-			.select({ value: sql<number>`count(distinct ${products.id})` })
+			.select({ value: countDistinct(productCategories.productId) })
 			.from(products)
 			.leftJoin(productCategories, eq(products.id, productCategories.productId))
 			
@@ -152,7 +174,6 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 // Cart Actions
  async function getUserCart(ownerId: string) {
 	try {
-		// Get or create cart for user
 		let userCart = await db.select().from(carts).where(eq(carts.ownerId, ownerId)).limit(1);
 		
 		if (!userCart.length) {
@@ -163,7 +184,6 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 			userCart = [newCart];
 		}
 
-		// Get cart items with product details
 		const cartItemsData = await db
 			.select({
 				id: cartItems.id,
@@ -186,8 +206,8 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 }
 
  async function addToCart(ownerId: string, productId: number, quantity: number = 1) {
+	// we should take the product details snapshot from the client side
 	try {
-		// Get or create cart
 		let userCart = await db.select().from(carts).where(eq(carts.ownerId, ownerId)).limit(1);
 		
 		if (!userCart.length) {
@@ -226,7 +246,7 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 				cartId: userCart[0].id,
 				productId,
 				titleSnapshot: product[0].title,
-				imgSnapshot: imgs[0].url, // You might want to get the first image here
+				imgSnapshot: imgs[0].url,
 				unitPrice: product[0].price,
 				unitDiscountedPrice: product[0].discountedPrice,
 				quantity,
@@ -245,18 +265,11 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 		const userCart = await db.select().from(carts).where(eq(carts.ownerId, ownerId)).limit(1);
 		if (!userCart.length) throw new Error('Cart not found');
 
-		if (quantity <= 0) {
-			// Remove item if quantity is 0 or negative
-			await db
-				.delete(cartItems)
-				.where(and(eq(cartItems.cartId, userCart[0].id), eq(cartItems.productId, productId)));
-		} else {
 			// Update quantity
 			await db
 				.update(cartItems)
 				.set({ quantity })
 				.where(and(eq(cartItems.cartId, userCart[0].id), eq(cartItems.productId, productId)));
-		}
 
 		return { success: true };
 	} catch (error) {

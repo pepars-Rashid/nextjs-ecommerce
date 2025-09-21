@@ -10,7 +10,6 @@ import { normalizeCartItems, CartItem } from "@/utils/cartUtils";
 
 // Re-export CartItem interface for convenience
 
-
  interface CartState {
   items: CartItem[];
   status: 'idle' | 'pending' | 'succeeded' | 'failed';

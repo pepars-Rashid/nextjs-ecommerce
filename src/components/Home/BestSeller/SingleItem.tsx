@@ -4,7 +4,7 @@ import { Product } from "@/types/product";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { useDispatch } from "react-redux";
 import { AppDispatch, useAppSelector } from "@/redux/store";
-import { updateQuickView } from "@/redux/features/quickView-slice";
+import { setCurrentProduct } from "@/redux/features/product-slice";
 import { addCartItemAsync } from "@/redux/features/cart-slice";
 import toast from "react-hot-toast";
 import Image from "next/image";
@@ -33,7 +33,7 @@ const SingleItem = ({ item }: { item: Product }) => {
 
   // update the QuickView state
   const handleQuickViewUpdate = () => {
-    dispatch(updateQuickView({ ...item }));
+        dispatch(setCurrentProduct({ ...item }));
   };
 
   // add to cart with async action
@@ -105,7 +105,7 @@ const SingleItem = ({ item }: { item: Product }) => {
           </div>
 
           <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5">
-            <Link href="/shop-details"> {item.title} </Link>
+            <Link href={`product/${item.id}`}> {item.title} </Link>
           </h3>
 
           <span className="flex items-center justify-center gap-2 font-medium text-lg">

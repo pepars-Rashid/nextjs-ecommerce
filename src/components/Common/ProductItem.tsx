@@ -3,10 +3,9 @@ import React from "react";
 import Image from "next/image";
 import { Product } from "@/types/product";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
-import { updateQuickView } from "@/redux/features/quickView-slice";
+import { setCurrentProduct } from "@/redux/features/product-slice";
 import { addCartItemAsync } from "@/redux/features/cart-slice";
 import { addWishlistItemAsync, removeWishlistItemAsync, selectIsInWishlist, checkIsInWishlistAsync } from "@/redux/features/wishlist-slice";
-import { updateproductDetails } from "@/redux/features/product-details";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, useAppSelector } from "@/redux/store";
 import toast from "react-hot-toast";
@@ -35,9 +34,9 @@ const ProductItem = ({ item }: { item: Product }) => {
     dispatch(checkIsInWishlistAsync(item.id));
   }, [dispatch, item.id]);
 
-  // update the QuickView state
+  // update the current product state for quick view
   const handleQuickViewUpdate = () => {
-    dispatch(updateQuickView({ ...item }));
+    dispatch(setCurrentProduct({ ...item }));
   };
 
   // add to cart with async action and toast notifications
@@ -67,9 +66,7 @@ const ProductItem = ({ item }: { item: Product }) => {
     }
   };
 
-  const handleProductDetails = () => {
-    dispatch(updateproductDetails({ ...item }));
-  };
+  // This is handled by the Link component now, no need for dispatch
 
   return (
     <div className="group">
@@ -201,11 +198,8 @@ const ProductItem = ({ item }: { item: Product }) => {
         <p className="text-custom-sm">({item.reviews})</p>
       </div>
 
-      <h3
-        className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5"
-        onClick={() => handleProductDetails()}
-      >
-        <Link href="/shop-details"> {item.title} </Link>
+      <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5">
+        <Link href={`/product/${item.id}`}> {item.title} </Link>
       </h3>
 
       <span className="flex items-center gap-2 font-medium text-lg">

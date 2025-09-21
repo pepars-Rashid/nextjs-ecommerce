@@ -1,4 +1,4 @@
-export type Product = {
+export interface Product {
   title: string;
   reviews: number;
   price: number;

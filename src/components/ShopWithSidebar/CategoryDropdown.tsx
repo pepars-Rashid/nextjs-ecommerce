@@ -1,15 +1,44 @@
 "use client";
 
+import { fetchProducts, selectFilters, updateFilters} from "@/redux/features/product-slice";
+import { AppDispatch, useAppSelector } from "@/redux/store";
 import { useState } from "react";
+import { useDispatch } from "react-redux";
 
 const CategoryItem = ({ category }) => {
+  const dispatch = useDispatch<AppDispatch>();
   const [selected, setSelected] = useState(false);
+  const filters = useAppSelector(selectFilters);
+  // // Handle category filter change
+    const handleCategoryChange = (categoryId: number) => {
+      setSelected(!selected)
+      let selectedCategories = [...filters.categoryIds];
+      if (!selected) {
+        selectedCategories.push(categoryId);
+        dispatch(updateFilters({ categoryIds:selectedCategories, offset: 0 }));
+        dispatch(fetchProducts({
+                ...filters,
+                categoryIds: selectedCategories,
+                offset: 0,
+                append: false,
+              }));
+      } else {
+        selectedCategories = selectedCategories.filter(id => id !== categoryId);
+        dispatch(updateFilters({ categoryIds:selectedCategories, offset: 0 }));
+        dispatch(fetchProducts({
+                ...filters,
+                categoryIds: selectedCategories,
+                offset: 0,
+                append: false,
+              }));
+      }
+    };
   return (
     <button
       className={`${
         selected && "text-blue"
       } group flex items-center justify-between ease-out duration-200 hover:text-blue `}
-      onClick={() => setSelected(!selected)}
+      onClick={() => handleCategoryChange(category.id)}
     >
       <div className="flex items-center gap-2">
         <div

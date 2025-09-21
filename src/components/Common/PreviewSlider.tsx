@@ -7,11 +7,12 @@ import Image from "next/image";
 
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { useAppSelector } from "@/redux/store";
+import { selectCurrentProduct } from "@/redux/features/product-slice";
 
 const PreviewSliderModal = () => {
   const { closePreviewModal, isModalPreviewOpen } = usePreviewSlider();
 
-  const data = useAppSelector((state) => state.productDetailsReducer.value);
+  const data = useAppSelector(selectCurrentProduct);
 
   const sliderRef = useRef(null);
 

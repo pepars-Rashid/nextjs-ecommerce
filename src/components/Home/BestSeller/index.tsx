@@ -3,16 +3,19 @@ import React, { useEffect, useState } from "react";
 import SingleItem from "./SingleItem";
 import Image from "next/image";
 import Link from "next/link";
-// import shopData from "@/components/Shop/shopData";
-import { getShopData } from "@/lib/server/shopData";
+import { useDispatch } from "react-redux";
+import { AppDispatch, useAppSelector } from "@/redux/store";
+import { fetchProducts, selectProducts, selectProductsLoading } from "@/redux/features/product-slice";
 
 const BestSeller = () => {
-  const [shopData, setShopData] = useState([]);
+  const dispatch = useDispatch<AppDispatch>();
+  const products = useAppSelector(selectProducts);
+  const isLoading = useAppSelector(selectProductsLoading);
+  
   useEffect(() => {
-    getShopData().then((data) => {
-      setShopData(data);
-    })
-  }, [])
+    // Fetch products for best seller section (limit to 6)
+    dispatch(fetchProducts({ limit: 6, sort: "latest" }));
+  }, [dispatch])
   return (
     <section className="overflow-hidden">
       <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
@@ -36,9 +39,15 @@ const BestSeller = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7.5">
           {/* <!-- Best Sellers item --> */}
-          {shopData.slice(1, 7).map((item, key) => (
-            <SingleItem item={item} key={key} />
-          ))}
+          {isLoading ? (
+            <div className="col-span-full text-center py-8">
+              <div className="text-lg">Loading products...</div>
+            </div>
+          ) : (
+            products.slice(0, 6).map((item, key) => (
+              <SingleItem item={item} key={key} />
+            ))
+          )}
         </div>
 
         <div className="text-center mt-12.5">

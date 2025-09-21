@@ -8,8 +8,7 @@ import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
-import { resetQuickView } from "@/redux/features/quickView-slice";
-import { updateproductDetails } from "@/redux/features/product-details";
+import { setCurrentProduct, resetCurrentProduct, selectCurrentProduct } from "@/redux/features/product-slice";
 
 const QuickViewModal = () => {
   const { isModalOpen, closeModal } = useModalContext();
@@ -17,8 +16,8 @@ const QuickViewModal = () => {
   const [quantity, setQuantity] = useState(1);
   const dispatch = useDispatch<AppDispatch>();
 
-  // get the product data
-  const product = useAppSelector((state) => state.quickViewReducer.value);
+  // get the current product data (for quick view)
+  const product = useAppSelector(selectCurrentProduct);
   const addStatus = useAppSelector((state) => state.cartReducer.addStatus);
   const isAddingToCart = addStatus === 'pending';
 
@@ -26,7 +25,7 @@ const QuickViewModal = () => {
 
   // preview modal
   const handlePreviewSlider = () => {
-    dispatch(updateproductDetails(product));
+    // Product is already in currentProduct state
     openPreviewModal();
   };
 

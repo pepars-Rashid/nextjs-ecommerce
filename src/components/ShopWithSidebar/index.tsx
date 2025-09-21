@@ -10,20 +10,27 @@ import PriceDropdown from "./PriceDropdown";
 // import shopData from "../Shop/shopData";
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
-import { getShopData } from "@/lib/server/shopData";
+import { useDispatch } from "react-redux";
+import { AppDispatch, useAppSelector } from "@/redux/store";
+import { fetchProducts, selectProducts, selectProductsLoading, selectProductsError, selectFilters, selectTotalCount, selectHasMore, updateFilters} from "@/redux/features/product-slice";
 import { getCategoriesWithCounts } from "@/lib/server/categoriesWithCounts";
-import { getProductsCount } from "@/lib/server/shopData";
-import Pagination from "../Common/Pagination";
 
 const ShopWithSidebar = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  
+  // Local UI state
   const [productStyle, setProductStyle] = useState("grid");
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
-  const [shopData, setShopData] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(1);
-  const pageSize = 9;
+  
+  // Redux state
+  const products = useAppSelector(selectProducts);
+  const isLoading = useAppSelector(selectProductsLoading);
+  const error = useAppSelector(selectProductsError);
+  const filters = useAppSelector(selectFilters);
+  const totalCount = useAppSelector(selectTotalCount);
+  const hasMore = useAppSelector(selectHasMore);
 
   const handleStickyMenu = () => {
     if (window.scrollY >= 80) {
@@ -33,11 +40,31 @@ const ShopWithSidebar = () => {
     }
   };
 
-  const options = [
-    { label: "Latest Products", value: "0" },
-    { label: "Best Selling", value: "1" },
-    { label: "Old Products", value: "2" },
+  const sortOptions = [
+    { label: "Latest Products", value: "latest" },
+    { label: "Price: Low to High", value: "price_asc" },
+    { label: "Price: High to Low", value: "price_desc" },
+    { label: "Oldest Products", value: "oldest" },
   ];
+
+  // Handle sort change
+  const handleSortChange = (sortValue: string) => {
+    const newSort = sortValue as "latest" | "price_asc" | "price_desc" | "oldest";
+    dispatch(updateFilters({ sort: newSort, offset: 0 }));
+    dispatch(fetchProducts({
+        ...filters,
+        sort: newSort,
+        offset: 0
+      }));
+  };
+
+  // Load more products (pagination)
+  const loadMoreProducts = () => {
+    dispatch(fetchProducts({ 
+      ...filters,
+      append: true 
+    }));
+  };
 
   const genders = [
     {
@@ -54,19 +81,18 @@ const ShopWithSidebar = () => {
     },
   ];
 
+  // Fetch initial products
   useEffect(() => {
-    const offset = (page - 1) * pageSize;
-    getShopData({ limit: pageSize, offset }).then((data) => {
-      setShopData(data as any);
-    });
-  }, [page]);
+    dispatch(fetchProducts({
+    }));
+  }, [dispatch]);
 
+  // Fetch products when filters change
+  
+
+  // Fetch categories
   useEffect(() => {
     getCategoriesWithCounts().then((cats) => setCategories(cats));
-  }, []);
-
-  useEffect(() => {
-    getProductsCount().then((count) => setTotalCount(count));
   }, []);
 
   useEffect(() => {
@@ -172,11 +198,18 @@ const ShopWithSidebar = () => {
                 <div className="flex items-center justify-between">
                   {/* <!-- top bar left --> */}
                   <div className="flex flex-wrap items-center gap-4">
-                    <CustomSelect options={options} />
+                    <CustomSelect 
+                      options={sortOptions} 
+                      onSelectionChange={handleSortChange}
+                      value={filters.sort}
+                    />
 
                     <p>
-                      Showing <span className="text-dark">{Math.min((page - 1) * pageSize + 1, totalCount)}-{Math.min(page * pageSize, totalCount)}</span> of <span className="text-dark">{totalCount}</span> Products
+                      Showing <span className="text-dark">{products.length}</span> of <span className="text-dark">{totalCount}</span> Products
                     </p>
+
+                    {isLoading && <span className="text-blue">Loading...</span>}
+                    {error && <span className="text-red-500">Error: {error}</span>}
                   </div>
 
                   {/* <!-- top bar right --> */}
@@ -268,7 +301,7 @@ const ShopWithSidebar = () => {
                     : "flex flex-col gap-7.5"
                 }`}
               >
-                {shopData.map((item, key) =>
+                {products.map((item, key) =>
                   productStyle === "grid" ? (
                     <SingleGridItem item={item} key={key} />
                   ) : (
@@ -278,9 +311,23 @@ const ShopWithSidebar = () => {
               </div>
               {/* <!-- Products Grid Tab Content End --> */}
 
-              {/* <!-- Products Pagination Start --> */}
-              <Pagination currentPage={page} totalItems={totalCount} pageSize={pageSize} onPageChange={(p) => setPage(p)} />
-              {/* <!-- Products Pagination End --> */}
+              {/* <!-- Load More Button Start --> */}
+              {products.length > 0 && (
+                <div className="text-center mt-12.5">
+                  <button
+                    onClick={loadMoreProducts}
+                    disabled={isLoading || !hasMore}
+                    className={`inline-flex font-medium text-custom-sm py-3 px-7 sm:px-12.5 rounded-md border ease-out duration-200 ${
+                      isLoading || !hasMore
+                        ? 'bg-gray-2 text-gray-5 border-gray-3 cursor-not-allowed'
+                        : 'border-gray-3 bg-gray-1 text-dark hover:bg-dark hover:text-white hover:border-transparent'
+                    }`}
+                  >
+                    {isLoading ? 'Loading...' : hasMore ? 'Load More' : 'No More Products'}
+                  </button>
+                </div>
+              )}
+              {/* <!-- Load More Button End --> */}
             </div>
             {/* // <!-- Content End --> */}
           </div>

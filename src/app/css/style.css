@@ -79,8 +79,8 @@ input[type='search']::-webkit-search-results-decoration {
 }
 
 /* style the items (options), including the selected item: */
-.select-items div {
-  @apply cursor-pointer text-dark-3 text-custom-sm py-[7px] px-4.5;
+.select-items button {
+  @apply text-dark-3 text-custom-sm py-[7px] px-4.5;
 }
 
 /* Style items (options): */
@@ -93,7 +93,7 @@ input[type='search']::-webkit-search-results-decoration {
   display: none;
 }
 
-.select-items div:hover,
+.select-items button:hover,
 .same-as-selected {
   @apply bg-gray-1 text-dark;
 }
