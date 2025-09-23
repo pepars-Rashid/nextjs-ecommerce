@@ -8,7 +8,7 @@ import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { useAppSelector } from "@/redux/store";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
-import { fetchProductById, selectCurrentProduct, selectCurrentProductLoading, selectCurrentProductError } from "@/redux/features/product-slice";
+import { selectCurrentProduct, selectCurrentProductLoading, selectCurrentProductError } from "@/redux/features/product-slice";
 
 const ProductDetails = ({ productId }: { productId: number }) => {
   const [activeColor, setActiveColor] = useState("blue");
@@ -85,9 +85,9 @@ const ProductDetails = ({ productId }: { productId: number }) => {
   const error = useAppSelector(selectCurrentProductError);
 
   // Fetch product data when component mounts
-  useEffect(() => {
-    dispatch(fetchProductById(productId));
-  }, [productId, dispatch]);
+  // useEffect(() => {
+  //   dispatch(fetchProductById(productId));
+  // }, [productId, dispatch]);
 
   // pass the product here when you get the real data.
   const handlePreviewSlider = () => {

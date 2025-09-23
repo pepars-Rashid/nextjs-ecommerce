@@ -13,7 +13,6 @@ const BestSeller = () => {
   const isLoading = useAppSelector(selectProductsLoading);
   
   useEffect(() => {
-    // Fetch products for best seller section (limit to 6)
     dispatch(fetchProducts({ limit: 6, sort: "latest" }));
   }, [dispatch])
   return (

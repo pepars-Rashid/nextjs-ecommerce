@@ -6,10 +6,9 @@ import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { setCurrentProduct } from "@/redux/features/product-slice";
 import { addCartItemAsync } from "@/redux/features/cart-slice";
 import { addWishlistItemAsync, removeWishlistItemAsync, selectIsInWishlist, checkIsInWishlistAsync } from "@/redux/features/wishlist-slice";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch} from "react-redux";
 import { AppDispatch, useAppSelector } from "@/redux/store";
 import toast from "react-hot-toast";
-import { useEffect } from "react";
 import Link from "next/link";
 
 const ProductItem = ({ item }: { item: Product }) => {
@@ -28,11 +27,6 @@ const ProductItem = ({ item }: { item: Product }) => {
   const isInWishlist = useAppSelector((state) => selectIsInWishlist(state, item.id));
   
   const isWishlistLoading = isAddingToWishlist || isRemovingFromWishlist;
-
-  // Check if item is in wishlist on component mount
-  useEffect(() => {
-    dispatch(checkIsInWishlistAsync(item.id));
-  }, [dispatch, item.id]);
 
   // update the current product state for quick view
   const handleQuickViewUpdate = () => {

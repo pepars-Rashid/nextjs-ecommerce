@@ -1,4 +1,4 @@
-// WishlistItem interface to match the existing structure
+// WishlistItem interface to match the cart pattern
 export interface WishlistItem {
   id: number;
   title: string;
@@ -12,35 +12,48 @@ export interface WishlistItem {
   };
 }
 
-// Type for the raw wishlist item data from the backend
-type RawWishlistItem = {
+// Type for the raw wishlist item data from the backend with product details
+type RawWishlistItemWithProduct = {
   id: number;
   productId: number;
   status: string;
   createdAt: string;
+  // Product details joined from products table
+  title?: string;
+  price?: string;
+  discountedPrice?: string;
+  description?: string;
+  // Images from productImages table
+  images?: Array<{
+    url: string;
+    kind: 'thumbnail' | 'preview';
+    sortOrder: number;
+  }>;
 };
 
 // Function to normalize wishlist items from backend format to WishlistItem format
-// Note: The backend only returns productId and status, so we'll need to fetch product details
-export function normalizeWishlistItems(rawItems: RawWishlistItem[] | any[], productDetails?: any[]): WishlistItem[] {
+export function normalizeWishlistItems(rawItems: RawWishlistItemWithProduct[] | any[]): WishlistItem[] {
   if (!rawItems || !Array.isArray(rawItems)) {
     return [];
   }
 
   return rawItems.map((item) => {
-    // If we have product details, use them, otherwise create minimal structure
-    const productInfo = productDetails?.find(p => p.id === item.productId);
+    // Group images by kind
+    const thumbnails = item.images?.filter(img => img.kind === 'thumbnail').map(img => img.url) || [];
+    const previews = item.images?.filter(img => img.kind === 'preview').map(img => img.url) || [];
     
     return {
       id: item.productId, // Use productId as the wishlist item id for consistency
-      title: productInfo?.title || `Product ${item.productId}`,
-      price: productInfo ? Number(productInfo.price) || 0 : 0,
-      discountedPrice: productInfo ? Number(productInfo.discountedPrice) || 0 : 0,
+      title: item.title || `Product ${item.productId}`,
+      price: typeof item.price === 'string' ? parseFloat(item.price) : Number(item.price) || 0,
+      discountedPrice: typeof item.discountedPrice === 'string' 
+        ? parseFloat(item.discountedPrice) 
+        : Number(item.discountedPrice) || 0,
       quantity: 1, // Wishlist items typically have quantity of 1
       status: item.status || "available",
-      imgs: productInfo?.imgs || {
-        thumbnails: [],
-        previews: [],
+      imgs: {
+        thumbnails,
+        previews,
       },
     };
   });

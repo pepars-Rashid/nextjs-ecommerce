@@ -13,7 +13,7 @@ import SingleListItem from "../Shop/SingleListItem";
 import { useDispatch } from "react-redux";
 import { AppDispatch, useAppSelector } from "@/redux/store";
 import { fetchProducts, selectProducts, selectProductsLoading, selectProductsError, selectFilters, selectTotalCount, selectHasMore, updateFilters} from "@/redux/features/product-slice";
-import { getCategoriesWithCounts } from "@/lib/server/categoriesWithCounts";
+import { fetchCategoriesWithCounts, selectCategories, selectCategoriesLoading, selectCategoriesError } from "@/redux/features/category-slice";
 
 const ShopWithSidebar = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -22,7 +22,6 @@ const ShopWithSidebar = () => {
   const [productStyle, setProductStyle] = useState("grid");
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
-  const [categories, setCategories] = useState([]);
   
   // Redux state
   const products = useAppSelector(selectProducts);
@@ -31,6 +30,11 @@ const ShopWithSidebar = () => {
   const filters = useAppSelector(selectFilters);
   const totalCount = useAppSelector(selectTotalCount);
   const hasMore = useAppSelector(selectHasMore);
+  
+  // Categories state
+  const categories = useAppSelector(selectCategories);
+  const categoriesLoading = useAppSelector(selectCategoriesLoading);
+  const categoriesError = useAppSelector(selectCategoriesError);
 
   const handleStickyMenu = () => {
     if (window.scrollY >= 80) {
@@ -81,19 +85,11 @@ const ShopWithSidebar = () => {
     },
   ];
 
-  // Fetch initial products
+  // Fetch initial data
   useEffect(() => {
-    dispatch(fetchProducts({
-    }));
+    dispatch(fetchProducts({}));
+    dispatch(fetchCategoriesWithCounts());
   }, [dispatch]);
-
-  // Fetch products when filters change
-  
-
-  // Fetch categories
-  useEffect(() => {
-    getCategoriesWithCounts().then((cats) => setCategories(cats));
-  }, []);
 
   useEffect(() => {
     window.addEventListener("scroll", handleStickyMenu);
@@ -174,7 +170,32 @@ const ShopWithSidebar = () => {
                   </div>
 
                   {/* <!-- category box --> */}
-                  <CategoryDropdown categories={categories} />
+<div>
+  {categoriesLoading && (
+    <div className="flex items-center justify-center">
+      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+      <span className="text-gray-600">Loading categories...</span>
+    </div>
+  )}
+  
+  {categoriesError && (
+    <div className="text-red-600 text-sm">
+      Error loading categories: {categoriesError}
+      <button 
+        onClick={() => dispatch(fetchCategoriesWithCounts())}
+        className="ml-2 text-blue-600 underline hover:no-underline"
+      >
+        Retry
+      </button>
+    </div>
+  )}
+  
+  {/* Always render CategoryDropdown, but you might want to handle empty state */}
+  <CategoryDropdown 
+    categories={categories} 
+  />
+</div>
+                  
 
                   {/* <!-- gender box --> */}
                   <GenderDropdown genders={genders} />

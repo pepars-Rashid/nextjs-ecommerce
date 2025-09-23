@@ -7,7 +7,6 @@ import {
   isInWishlistForUser 
 } from "@/app/actions/action";
 import { normalizeWishlistItems, WishlistItem } from "@/utils/wishlistUtils";
-import { getProduct } from "@/app/actions/action";
 
 interface WishlistState {
   items: WishlistItem[];
@@ -37,17 +36,8 @@ export const fetchWishlistItems = createAsyncThunk(
   async () => {
     const response = await getUserWishlistForUser();
     
-    // If we have wishlist items, fetch product details for each
-    if (response.length > 0) {
-      const productDetails = await Promise.all(
-        response.map(item => getProduct(item.productId))
-      );
-      return normalizeWishlistItems(response, productDetails.filter(p => p !== null));
-    }
-    
-    return [];
-  }
-);
+      return normalizeWishlistItems(response);
+  });
 
 export const addWishlistItemAsync = createAsyncThunk(
   'wishlist/addWishlistItem',
@@ -59,16 +49,8 @@ export const addWishlistItemAsync = createAsyncThunk(
     
     // Refetch wishlist items to get the updated list
     const response = await getUserWishlistForUser();
-    if (response.length > 0) {
-      const productDetails = await Promise.all(
-        response.map(item => getProduct(item.productId))
-      );
-      return normalizeWishlistItems(response, productDetails.filter(p => p !== null));
-    }
-    
-    return [];
-  }
-);
+      return normalizeWishlistItems(response);
+    });
 
 export const removeWishlistItemAsync = createAsyncThunk(
   'wishlist/removeWishlistItem',
@@ -80,16 +62,8 @@ export const removeWishlistItemAsync = createAsyncThunk(
     
     // Refetch wishlist items to get the updated list
     const response = await getUserWishlistForUser();
-    if (response.length > 0) {
-      const productDetails = await Promise.all(
-        response.map(item => getProduct(item.productId))
-      );
-      return normalizeWishlistItems(response, productDetails.filter(p => p !== null));
-    }
-    
-    return [];
-  }
-);
+      return normalizeWishlistItems(response);
+    });
 
 export const clearWishlistAsync = createAsyncThunk(
   'wishlist/clearWishlist',

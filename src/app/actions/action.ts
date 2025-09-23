@@ -113,8 +113,8 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
 	}).catch(error => {
 	  throw new Error(`Failed to fetch products: ${error.message}`);
 	});
-
-	console.log("Fetched products:", productsWithImages);
+	
+	console.log("listProducts called");
 	return productsWithImages as ListedProduct[];
 
   } catch (error) {
@@ -123,15 +123,17 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
   }
 }
 
-export async function getProduct(productId: number): Promise<Product | null> {
-	const row = await db.select().from(products).where(eq(products.id, productId)).limit(1);
-	if (!row.length) return null;
-	const imgs = await db
-		.select({ url: productImages.url, kind: productImages.kind, sortOrder: productImages.sortOrder })
-		.from(productImages)
-		.where(eq(productImages.productId, productId));
-	return { ...(row[0] as any), images: imgs };
-}
+// export async function getProduct(productId: number): Promise<Product | null> {
+// 	const row = await db.select().from(products).where(eq(products.id, productId)).limit(1);
+// 	if (!row.length) return null;
+// 	const imgs = await db
+// 		.select({ url: productImages.url, kind: productImages.kind, sortOrder: productImages.sortOrder })
+// 		.from(productImages)
+// 		.where(eq(productImages.productId, productId));
+		
+// 	console.log("getProduct called");	
+// 	return { ...(row[0] as any), images: imgs };
+// }
 
 export type CategoryWithCount = { id: number; name: string; slug: string; productCount: number; imgUrl: string };
 
@@ -147,6 +149,8 @@ export async function listCategoriesWithCounts(): Promise<CategoryWithCount[]> {
 		.from(categories)
 		.leftJoin(productCategories, eq(categories.id, productCategories.categoryId))
 		.groupBy(categories.id, categories.name, categories.slug, categories.imgUrl);
+
+	console.log("listCategoriesWithCounts called");	
 	return rows as CategoryWithCount[];
 }
 
@@ -164,6 +168,8 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 			.leftJoin(productCategories, eq(products.id, productCategories.productId))
 			
 			.where(inArray(productCategories.categoryId, categoryIds));
+
+		console.log("countProducts with categories called");	
 		return Number((rows?.[0] as any)?.value ?? 0);
 	} catch (error) {
 		console.error("Error counting products:", error);
@@ -314,11 +320,33 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 				productId: wishlistItems.productId,
 				status: wishlistItems.status,
 				createdAt: wishlistItems.createdAt,
+				// Product details
+				title: products.title,
+				price: products.price,
+				discountedPrice: products.discountedPrice,
+				description: products.description,
 			})
 			.from(wishlistItems)
+			.innerJoin(products, eq(wishlistItems.productId, products.id))
 			.where(eq(wishlistItems.wishlistId, userWishlist[0].id));
 
-		return wishlistItemsData;
+		// Get product images for each wishlist item
+		const wishlistWithImages = await Promise.all(
+			wishlistItemsData.map(async (item) => {
+				const images = await db
+					.select({ url: productImages.url, kind: productImages.kind, sortOrder: productImages.sortOrder })
+					.from(productImages)
+					.where(eq(productImages.productId, item.productId))
+					.orderBy(asc(productImages.sortOrder));
+				
+				return {
+					...item,
+					images: images || []
+				};
+			})
+		);
+
+		return wishlistWithImages;
 	} catch (error) {
 		console.error('Error getting user wishlist:', error);
 		return [];
@@ -401,6 +429,7 @@ export async function addToCartForUser(productId: number, quantity: number = 1) 
 	const user = await stackServerApp.getUser();
 	if (!user) throw new Error('Not authenticated');
 
+	console.log("addToCartForUser called for user");
 	return await addToCart(user.id, productId, quantity);
 }
 
@@ -408,6 +437,7 @@ export async function updateCartItemQuantityForUser(productId: number, quantity:
 	const user = await stackServerApp.getUser();
 	if (!user) throw new Error('Not authenticated');
 
+	console.log("updateCartItemQuantityForUser called for user");
 	return await updateCartItemQuantity(user.id, productId, quantity);
 }
 
@@ -415,6 +445,7 @@ export async function removeFromCartForUser(productId: number) {
 	const user = await stackServerApp.getUser();
 	if (!user) throw new Error('Not authenticated');
 
+	console.log("removeFromCartForUser called for user");
 	return await removeFromCart(user.id, productId);
 }
 
@@ -422,6 +453,7 @@ export async function getUserCartForUser() {
 	const user = await stackServerApp.getUser();
 	if (!user) return [];
 
+	console.log("getUserCartForUser called for user");
 	return await getUserCart(user.id);
 }
 
@@ -430,6 +462,7 @@ export async function addToWishlistForUser(productId: number) {
 	const user = await stackServerApp.getUser();
 	if (!user) throw new Error('Not authenticated');
 
+	console.log("addToWishlistForUser called for user");
 	return await addToWishlist(user.id, productId);
 }
 
@@ -437,6 +470,7 @@ export async function removeFromWishlistForUser(productId: number) {
 	const user = await stackServerApp.getUser();
 	if (!user) throw new Error('Not authenticated');
 
+	console.log("removeFromWishlistForUser called for user");
 	return await removeFromWishlist(user.id, productId);
 }
 
@@ -444,6 +478,7 @@ export async function getUserWishlistForUser() {
 	const user = await stackServerApp.getUser();
 	if (!user) return [];
 
+	console.log("getUserWishlistForUser called for user");
 	return await getUserWishlist(user.id);
 }
 
@@ -451,5 +486,6 @@ export async function isInWishlistForUser(productId: number): Promise<boolean> {
 	const user = await stackServerApp.getUser();
 	if (!user) throw new Error('Not authenticated');
 
+	console.log("isInWishlistForUser called for user");
 	return await isInWishlist(user.id, productId);
 }

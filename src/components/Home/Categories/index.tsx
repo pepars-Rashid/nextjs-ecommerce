@@ -1,17 +1,22 @@
 "use client";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { useCallback, useRef, useEffect, useState } from "react";
-// import data from "./categoryData";
+import { useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
+import { useDispatch } from "react-redux";
+import { useAppSelector } from "@/redux/store";
+import { fetchCategoriesWithCounts, selectCategories, selectCategoriesLoading, selectCategoriesError } from "@/redux/features/category-slice";
+import type { AppDispatch } from "@/redux/store";
 
 // Import Swiper styles
 import "swiper/css/navigation";
 import "swiper/css";
 import SingleItem from "./SingleItem";
-import { getCategoryData } from "@/lib/server/catagoryData";
 
 const Categories = () => {
-  const [data, setData] = useState([]);
+  const dispatch = useDispatch<AppDispatch>();
+  const categories = useAppSelector(selectCategories);
+  const loading = useAppSelector(selectCategoriesLoading);
+  const error = useAppSelector(selectCategoriesError);
   const sliderRef = useRef(null);
 
   const handlePrev = useCallback(() => {
@@ -24,17 +29,25 @@ const Categories = () => {
     sliderRef.current.swiper.slideNext();
   }, []);
 
-  useEffect(() => {
-    getCategoryData().then((data) => {
-      setData(data);
-    });
-
+  useEffect(() => {    
     if (sliderRef.current) {
       sliderRef.current.swiper.init();
     }
   }, []);
 
+  useEffect(() => {
+    dispatch(fetchCategoriesWithCounts());
+  }, [dispatch]);
+
+  // Transform CategoryWithCount to Category format expected by SingleItem
+  const data = categories.map(category => ({
+    id: category.id,
+    title: category.name,
+    img: category.imgUrl
+  }));
+
   return (
+    <>
     <section className="overflow-hidden pt-17.5">
       <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0 pb-15 border-b border-gray-3">
         <div className="swiper categories-carousel common-carousel">
@@ -81,8 +94,31 @@ const Categories = () => {
               <h2 className="font-semibold text-xl xl:text-heading-5 text-dark">
                 Browse by Category
               </h2>
+              {loading && (<section className="overflow-hidden pt-17.5">
+                    <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0 pb-15 border-b border-gray-3">
+                      <div className="flex items-center justify-center h-32">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                          <p className="text-gray-600">Loading categories...</p>
+                        </div>
+                      </div>
+                    </div>
+                  </section>)}
+            {error && (<section className="overflow-hidden pt-17.5">
+                    <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0 pb-15 border-b border-gray-3">
+                      <div className="text-center py-8">
+                        <p className="text-red-600">Error loading categories: {error}</p>
+                        <button 
+                          onClick={() => dispatch(fetchCategoriesWithCounts())}
+                          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    </div>
+                  </section>)}    
             </div>
-
+            
             <div className="flex items-center gap-3">
               <button onClick={handlePrev} className="swiper-button-prev">
                 <svg
@@ -139,7 +175,7 @@ const Categories = () => {
                 slidesPerView: 6,
               },
             }}
-          >
+          >                
             {data.map((item, key) => (
               <SwiperSlide key={key}>
                 <SingleItem item={item} />
@@ -149,6 +185,7 @@ const Categories = () => {
         </div>
       </div>
     </section>
+    </>
   );
 };
 

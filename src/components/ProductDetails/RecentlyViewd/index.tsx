@@ -9,15 +9,19 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { useCallback, useRef } from "react";
 import "swiper/css/navigation";
 import "swiper/css";
-import { getShopData } from "@/lib/server/shopData";
+import { useDispatch } from "react-redux";
+import { AppDispatch, useAppSelector } from "@/redux/store";
+import { fetchProducts, selectProducts, selectProductsLoading } from "@/redux/features/product-slice";
+
 
 const RecentlyViewdItems = () => {
-  const [shopData, setShopData] = useState([]);
+  const dispatch = useDispatch<AppDispatch>();
+  const shopData = useAppSelector(selectProducts);
+  const isLoading = useAppSelector(selectProductsLoading);
+
   useEffect(() => {
-    getShopData().then((data) => {
-      setShopData(data);
-    })
-  }, [])
+    dispatch(fetchProducts({ limit: 4, sort: "latest" }));
+  }, [dispatch])
 
   const sliderRef = useRef(null);
 

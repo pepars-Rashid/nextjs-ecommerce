@@ -1,10 +1,9 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Product } from "@/types/product";
-import { listProducts, getProduct, ListProductsParams } from "@/app/actions/action";
+import { listProducts, ListProductsParams } from "@/app/actions/action";
 import { normalizeProducts, normalizeSingleProduct, createEmptyProduct } from "@/utils/productUtils";
 
 interface InitialState {
-  // Product list state
   items: Product[];
   isLoading: boolean;
   error: string | null;
@@ -69,21 +68,21 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
-// Fetch single product by ID
-export const fetchProductById = createAsyncThunk(
-  'product/fetchProductById',
-  async (productId: number, { rejectWithValue }) => {
-    try {
-      const response = await getProduct(productId);
-      if (!response) {
-        throw new Error('Product not found');
-      }
-      return normalizeSingleProduct(response);
-    } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch product');
-    }
-  }
-);
+// // Fetch single product by ID
+// export const fetchProductById = createAsyncThunk(
+//   'product/fetchProductById',
+//   async (productId: number, { rejectWithValue }) => {
+//     try {
+//       const response = await getProduct(productId);
+//       if (!response) {
+//         throw new Error('Product not found');
+//       }
+//       return normalizeSingleProduct(response);
+//     } catch (error) {
+//       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch product');
+//     }
+//   }
+// );
 
 export const productSlice = createSlice({
   name: "product",
@@ -163,20 +162,20 @@ export const productSlice = createSlice({
         state.error = action.payload as string || 'Failed to fetch products';
       })
       
-      // fetchProductById cases
-      .addCase(fetchProductById.pending, (state) => {
-        state.currentProductLoading = true;
-        state.currentProductError = null;
-      })
-      .addCase(fetchProductById.fulfilled, (state, action) => {
-        state.currentProduct = action.payload;
-        state.currentProductLoading = false;
-        state.currentProductError = null;
-      })
-      .addCase(fetchProductById.rejected, (state, action) => {
-        state.currentProductLoading = false;
-        state.currentProductError = action.payload as string || 'Failed to fetch product';
-      });
+      // // fetchProductById cases
+      // .addCase(fetchProductById.pending, (state) => {
+      //   state.currentProductLoading = true;
+      //   state.currentProductError = null;
+      // })
+      // .addCase(fetchProductById.fulfilled, (state, action) => {
+      //   state.currentProduct = action.payload;
+      //   state.currentProductLoading = false;
+      //   state.currentProductError = null;
+      // })
+      // .addCase(fetchProductById.rejected, (state, action) => {
+      //   state.currentProductLoading = false;
+      //   state.currentProductError = action.payload as string || 'Failed to fetch product';
+      // });
   }
 });
 

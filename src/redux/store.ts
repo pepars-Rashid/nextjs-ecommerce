@@ -3,6 +3,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import productReducer from "./features/product-slice";
 import cartReducer from "./features/cart-slice";
 import wishlistReducer from "./features/wishlist-slice";
+import categoriesReducer from "./features/category-slice";
 
 import { TypedUseSelectorHook, useSelector } from "react-redux";
 
@@ -11,6 +12,7 @@ export const store = configureStore({
     productReducer,
     cartReducer,
     wishlistReducer,
+    categoriesReducer,
   },
 });
 

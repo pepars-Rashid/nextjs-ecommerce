@@ -5,8 +5,13 @@ import { removeWishlistItemAsync } from "@/redux/features/wishlist-slice";
 import { addCartItemAsync } from "@/redux/features/cart-slice";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import { WishlistItem } from "@/utils/wishlistUtils";
 
-const SingleItem = ({ item }) => {
+interface SingleItemProps {
+  item: WishlistItem;
+}
+
+const SingleItem: React.FC<SingleItemProps> = ({ item }) => {
   const dispatch = useDispatch<AppDispatch>();
   const addStatus = useAppSelector((state) => state.cartReducer.addStatus);
   const removeStatus = useAppSelector((state) => state.wishlistReducer.removeStatus);
@@ -77,12 +82,29 @@ const SingleItem = ({ item }) => {
         <div className="flex items-center justify-between gap-5">
           <div className="w-full flex items-center gap-5.5">
             <div className="flex items-center justify-center rounded-[5px] bg-gray-2 max-w-[80px] w-full h-17.5">
-              <Image src={item.imgs?.thumbnails[0]} alt="product" width={200} height={200} />
+              {item.imgs?.thumbnails && item.imgs.thumbnails.length > 0 ? (
+                <Image 
+                  src={item.imgs.thumbnails[0]} 
+                  alt={item.title || "product"} 
+                  width={200} 
+                  height={200} 
+                  className="object-cover rounded-[5px]"
+                  onError={(e) => {
+                    e.currentTarget.src = '/images/placeholder-product.jpg'; // fallback image
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  <svg width="40" height="40" viewBox="0 0 40 40" fill="currentColor">
+                    <path d="M8 12a4 4 0 0 1 4-4h16a4 4 0 0 1 4 4v16a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V12zm4-2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V12a2 2 0 0 0-2-2H12zm10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm-2 4.5l-3.5 3.5h11l-2.5-2.5-2-2L22 18.5z" />
+                  </svg>
+                </div>
+              )}
             </div>
 
             <div>
               <h3 className="text-dark ease-out duration-200 hover:text-blue">
-                <a href="#"> {item.title} </a>
+                <a href="#"> {item.title || 'Product'}</a>
               </h3>
             </div>
           </div>
@@ -90,7 +112,7 @@ const SingleItem = ({ item }) => {
       </div>
 
       <div className="min-w-[205px]">
-        <p className="text-dark">${item.discountedPrice}</p>
+        <p className="text-dark">${item.discountedPrice?.toFixed(2) || '0.00'}</p>
       </div>
 
       <div className="min-w-[265px]">

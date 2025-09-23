@@ -9,7 +9,7 @@ import { addCartItemAsync } from "@/redux/features/cart-slice";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import Link from "next/link";
-import { addWishlistItemAsync, removeWishlistItemAsync, selectIsInWishlist, checkIsInWishlistAsync } from "@/redux/features/wishlist-slice";
+import { addWishlistItemAsync, removeWishlistItemAsync, selectIsInWishlist} from "@/redux/features/wishlist-slice";
 import { useEffect } from "react";
 
 const SingleItem = ({ item }: { item: Product }) => {
@@ -25,12 +25,7 @@ const SingleItem = ({ item }: { item: Product }) => {
   const isRemovingFromWishlist = wishlistRemoveStatus === 'pending';
   const isInWishlist = useAppSelector((state) => selectIsInWishlist(state, item.id));
   const isWishlistLoading = isAddingToWishlist || isRemovingFromWishlist;
-
-  // Check if item is in wishlist on component mount
-  useEffect(() => {
-    dispatch(checkIsInWishlistAsync(item.id));
-  }, [dispatch, item.id]);
-
+  
   // update the QuickView state
   const handleQuickViewUpdate = () => {
         dispatch(setCurrentProduct({ ...item }));

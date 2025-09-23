@@ -3,16 +3,19 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ProductItem from "@/components/Common/ProductItem";
-// import shopData from "@/components/Shop/shopData";
-import { getShopData } from "@/lib/server/shopData";
+import { useDispatch } from "react-redux";
+import { AppDispatch, useAppSelector } from "@/redux/store";
+import { fetchProducts, selectProducts, selectProductsLoading } from "@/redux/features/product-slice";
+
 
 const NewArrival = () => {
-  const [shopData, setShopData] = useState([]);
+  const dispatch = useDispatch<AppDispatch>();
+  const shopData = useAppSelector(selectProducts);
+  const isLoading = useAppSelector(selectProductsLoading);
+
   useEffect(() => {
-    getShopData().then((data) => {
-      setShopData(data);
-    })
-  }, [])
+    dispatch(fetchProducts({ limit: 6, sort: "latest" }));
+  }, [dispatch])
 
   return (
     <section className="overflow-hidden pt-15">
