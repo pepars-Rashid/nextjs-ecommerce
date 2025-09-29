@@ -1,21 +1,23 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import SearchForm from "../Blog/SearchForm";
 import LatestPosts from "../Blog/LatestPosts";
 import LatestProducts from "../Blog/LatestProducts";
 import blogData from "../BlogGrid/blogData";
 import Image from "next/image";
-// import shopData from "../Shop/shopData"; 
-import { getShopData } from "@/lib/server/shopData";
+import { AppDispatch, useAppSelector } from "@/redux/store";
+import { fetchProducts, selectProducts } from "@/redux/features/product-slice";
+import { useDispatch } from "react-redux";
 
 const BlogDetailsWithSidebar = () => {
-  const [shopData, setShopData] = useState([]);
+  const dispatch = useDispatch<AppDispatch>();
+  const shopData = useAppSelector(selectProducts);
+
   useEffect(() => {
-    getShopData().then((data) => {
-      setShopData(data);
-    })
-  }, [])
+      dispatch(fetchProducts({}));
+    }, [dispatch]);
+
   return (
     <>
       <Breadcrumb

@@ -5,7 +5,7 @@ import { removeWishlistItemAsync } from "@/redux/features/wishlist-slice";
 import { addCartItemAsync } from "@/redux/features/cart-slice";
 import toast from "react-hot-toast";
 import Image from "next/image";
-import { WishlistItem } from "@/utils/wishlistUtils";
+import type { WishlistItem } from "@/types/wishlist";
 
 interface SingleItemProps {
   item: WishlistItem;

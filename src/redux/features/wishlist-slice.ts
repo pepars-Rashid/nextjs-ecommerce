@@ -4,9 +4,9 @@ import {
   getUserWishlistForUser,
   addToWishlistForUser,
   removeFromWishlistForUser,
-  isInWishlistForUser 
 } from "@/app/actions/action";
-import { normalizeWishlistItems, WishlistItem } from "@/utils/wishlistUtils";
+import { normalizeWishlistItems } from "@/utils/wishlistUtils";
+import type { WishlistItem } from "@/types/wishlist";
 
 interface WishlistState {
   items: WishlistItem[];
@@ -81,13 +81,13 @@ export const clearWishlistAsync = createAsyncThunk(
   }
 );
 
-export const checkIsInWishlistAsync = createAsyncThunk(
-  'wishlist/checkIsInWishlist',
-  async (productId: number) => {
-    const isInWishlist = await isInWishlistForUser(productId);
-    return { productId, isInWishlist };
-  }
-);
+// export const checkIsInWishlistAsync = createAsyncThunk(
+//   'wishlist/checkIsInWishlist',
+//   async (productId: number) => {
+//     const isInWishlist = await isInWishlistForUser(productId);
+//     return { productId, isInWishlist };
+//   }
+// );
 
 const wishlistSlice = createSlice({
   name: "wishlist",
@@ -182,18 +182,18 @@ const wishlistSlice = createSlice({
         state.clearStatus = 'failed';
         state.error = action.error.message || 'Failed to clear wishlist';
       })
-      // Check is in wishlist
-      .addCase(checkIsInWishlistAsync.pending, (state) => {
-        state.checkStatus = 'pending';
-      })
-      .addCase(checkIsInWishlistAsync.fulfilled, (state, action) => {
-        state.checkStatus = 'succeeded';
-        state.isInWishlist[action.payload.productId] = action.payload.isInWishlist;
-      })
-      .addCase(checkIsInWishlistAsync.rejected, (state, action) => {
-        state.checkStatus = 'failed';
-        state.error = action.error.message || 'Failed to check wishlist status';
-      });
+      // // Check is in wishlist
+      // .addCase(checkIsInWishlistAsync.pending, (state) => {
+      //   state.checkStatus = 'pending';
+      // })
+      // .addCase(checkIsInWishlistAsync.fulfilled, (state, action) => {
+      //   state.checkStatus = 'succeeded';
+      //   state.isInWishlist[action.payload.productId] = action.payload.isInWishlist;
+      // })
+      // .addCase(checkIsInWishlistAsync.rejected, (state, action) => {
+      //   state.checkStatus = 'failed';
+      //   state.error = action.error.message || 'Failed to check wishlist status';
+      // });
   },
 });
 

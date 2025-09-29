@@ -1,4 +1,4 @@
-import { Category } from "@/types/category";
+import { Category } from "@/types/ui";
 import React from "react";
 import Image from "next/image";
 

@@ -18,20 +18,11 @@ import { usersSync } from 'drizzle-orm/neon';
 // Enums
 export const imageKindEnum = pgEnum("image_kind", ["thumbnail", "preview"]);
 export const cartStatusEnum = pgEnum("cart_status", ["active", "ordered", "abandoned"]);
-export const orderStatusEnum = pgEnum("order_status", [
-  "pending",
-  "paid",
-  "shipped",
-  "completed",
-  "cancelled",
-]);
+export const orderStatusEnum = pgEnum("order_status", ["pending","paid","shipped","completed","cancelled",]);
 export const paymentStatusEnum = pgEnum("payment_status", ["unpaid", "paid", "refunded"]);
 
-// NOTE: Local users table removed in favor of external auth (Neon/Stack Auth).
-// Use ownerId (text) to store the external user identifier from the auth provider and
-// reference it via usersSync per Drizzle Neon docs.
 export const addresses = pgTable(
-  "addresses",
+"addresses",
   {
     id: serial("id").primaryKey(),
     ownerId: text("owner_id").notNull().references(() => usersSync.id),
@@ -46,14 +37,14 @@ export const addresses = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => ({
-    ownerIdx: index("addresses_owner_id_idx").on(t.ownerId),
-  })
-);
+  (t) => [
+    index("addresses_owner_id_idx").on(t.ownerId),
+  ]);
 
 // Products
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
+  productSlug: varchar("productSlug", { length: 255 }).notNull().default('product-slug'),
   title: varchar("title", { length: 255 }).notNull(),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   discountedPrice: numeric("discounted_price", { precision: 10, scale: 2 }).notNull().default("0"),
@@ -61,9 +52,13 @@ export const products = pgTable("products", {
   avgRating: numeric("avg_rating", { precision: 3, scale: 2 }).notNull().default("0"),
   reviewsCount: integer("reviews_count").notNull().default(0),
   description: text("description"),
+  detiledDescription: text("detiled_description"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+  
+}, (t) => [
+  uniqueIndex("products_product_slug_unique").on(t.productSlug),
+]);
 
 // Product Images
 export const productImages = pgTable(
@@ -78,10 +73,9 @@ export const productImages = pgTable(
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => ({
-    productIdx: index("product_images_product_id_idx").on(t.productId),
-  })
-);
+  (t) => [
+      index("product_images_product_id_idx").on(t.productId),
+  ]);
 
 // Categories
 export const categories = pgTable(
@@ -92,10 +86,9 @@ export const categories = pgTable(
     slug: varchar("slug", { length: 255 }).notNull(),
     imgUrl: text("imgUrl").notNull().default("/blanck,png"),
   },
-  (t) => ({
-    slugUnique: uniqueIndex("categories_slug_unique").on(t.slug),
-  })
-);
+  (t) => [
+    uniqueIndex("categories_slug_unique").on(t.slug),
+  ]);
 
 // Product <-> Category (many-to-many)
 export const productCategories = pgTable(
@@ -108,9 +101,9 @@ export const productCategories = pgTable(
       .notNull()
       .references(() => categories.id, { onDelete: "cascade" }),
   },
-  (t) => ({
-    pk: primaryKey({ name: "product_categories_pk", columns: [t.productId, t.categoryId] }),
-  })
+  (t) => [
+    primaryKey({ name: "product_categories_pk", columns: [t.productId, t.categoryId] }),
+  ]
 );
 
 // Reviews
@@ -124,14 +117,13 @@ export const reviews = pgTable(
     ownerId: text("owner_id").notNull().references(() => usersSync.id),
     rating: integer("rating").notNull(), // validate 1..5 in app or with a CHECK if you prefer
     comment: text("comment"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),// validate 1..5 in app or with a CHECK if you prefer
   },
-  (t) => ({
-    productIdx: index("reviews_product_id_idx").on(t.productId),
-    ownerIdx: index("reviews_owner_id_idx").on(t.ownerId),
-    ownerProductUnique: uniqueIndex("reviews_owner_product_unique").on(t.ownerId, t.productId),
-  })
-);
+  (t) => [
+    index("reviews_product_id_idx").on(t.productId),
+    index("reviews_owner_id_idx").on(t.ownerId),
+    uniqueIndex("reviews_owner_product_unique").on(t.ownerId, t.productId),
+  ]);
 
 // Carts
 export const carts = pgTable(
@@ -143,10 +135,9 @@ export const carts = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => ({
-    ownerIdx: index("carts_owner_id_idx").on(t.ownerId),
-  })
-);
+  (t) => [
+    index("carts_owner_id_idx").on(t.ownerId),
+  ]);
 
 // Cart Items
 export const cartItems = pgTable(
@@ -159,18 +150,13 @@ export const cartItems = pgTable(
     productId: integer("product_id")
       .notNull()
       .references(() => products.id),
-    titleSnapshot: varchar("title_snapshot", { length: 255 }).notNull(),
-    imgSnapshot: text("img_snapshot"),
-    unitPrice: numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
-    unitDiscountedPrice: numeric("unit_discounted_price", { precision: 10, scale: 2 }).notNull(),
     quantity: integer("quantity").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => ({
-    cartIdx: index("cart_items_cart_id_idx").on(t.cartId),
-    uniqueCartProduct: uniqueIndex("cart_items_cart_product_unique").on(t.cartId, t.productId),
-  })
-);
+  (t) => [
+    index("cart_items_cart_id_idx").on(t.cartId),
+    uniqueIndex("cart_items_cart_product_unique").on(t.cartId, t.productId),
+  ]);
 
 // Wishlists (one per owner)
 export const wishlists = pgTable(
@@ -180,10 +166,9 @@ export const wishlists = pgTable(
     ownerId: text("owner_id").notNull().references(() => usersSync.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => ({
-    ownerUnique: uniqueIndex("wishlists_owner_id_unique").on(t.ownerId),
-  })
-);
+  (t) => [
+    uniqueIndex("wishlists_owner_id_unique").on(t.ownerId),
+  ]);
 
 // Wishlist Items
 export const wishlistItems = pgTable(
@@ -196,17 +181,15 @@ export const wishlistItems = pgTable(
     productId: integer("product_id")
       .notNull()
       .references(() => products.id),
-    status: varchar("status", { length: 50 }).notNull().default("available"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => ({
-    wishlistIdx: index("wishlist_items_wishlist_id_idx").on(t.wishlistId),
-    uniqueWishlistProduct: uniqueIndex("wishlist_items_wishlist_product_unique").on(
+  (t) => [
+    index("wishlist_items_wishlist_id_idx").on(t.wishlistId),
+    uniqueIndex("wishlist_items_wishlist_product_unique").on(
       t.wishlistId,
       t.productId
     ),
-  })
-);
+  ]);
 
 // Orders
 export const orders = pgTable(
@@ -225,10 +208,9 @@ export const orders = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => ({
-    ownerIdx: index("orders_owner_id_idx").on(t.ownerId),
-  })
-);
+  (t) => [
+    index("orders_owner_id_idx").on(t.ownerId),
+  ]);
 
 // Order Items
 export const orderItems = pgTable(
@@ -241,17 +223,12 @@ export const orderItems = pgTable(
     productId: integer("product_id")
       .notNull()
       .references(() => products.id),
-    titleSnapshot: varchar("title_snapshot", { length: 255 }).notNull(),
-    imgSnapshot: text("img_snapshot"),
-    unitPrice: numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
-    unitDiscountedPrice: numeric("unit_discounted_price", { precision: 10, scale: 2 }).notNull(),
     quantity: integer("quantity").notNull(),
   },
-  (t) => ({
-    orderIdx: index("order_items_order_id_idx").on(t.orderId),
-    uniqueOrderProduct: uniqueIndex("order_items_order_product_unique").on(t.orderId, t.productId),
-  })
-);
+  (t) => [
+    index("order_items_order_id_idx").on(t.orderId),
+    uniqueIndex("order_items_order_product_unique").on(t.orderId, t.productId),
+  ]);
 
 // Relations
 export const addressesRelations = relations(addresses, ({}) => ({}));

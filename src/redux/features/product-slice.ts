@@ -1,7 +1,9 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Product } from "@/types/product";
-import { listProducts, ListProductsParams } from "@/app/actions/action";
-import { normalizeProducts, normalizeSingleProduct, createEmptyProduct } from "@/utils/productUtils";
+import { listProducts } from "@/app/actions/action";
+import type { ListProductsParams } from "@/types/product";
+import { normalizeProducts, createEmptyProduct } from "@/utils/productUtils";
+import { ProductSortOption } from "@/types/common";
 
 interface InitialState {
   items: Product[];
@@ -16,7 +18,7 @@ interface InitialState {
   // Filter and pagination state
   filters: {
     categoryIds: number[];
-    sort?: "latest" | "price_asc" | "price_desc" | "oldest";
+    sort?: ProductSortOption
     limit: number;
     offset: number;
   };

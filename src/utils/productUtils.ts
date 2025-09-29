@@ -1,5 +1,4 @@
-import { Product } from "@/types/product";
-import { ListedProduct } from "@/app/actions/action";
+import { Product, ListedProduct } from "@/types/product";
 
 // Use the ListedProduct interface from actions
 

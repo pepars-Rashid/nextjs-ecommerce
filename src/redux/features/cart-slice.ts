@@ -6,7 +6,8 @@ import {
   updateCartItemQuantityForUser,
   removeFromCartForUser 
 } from "@/app/actions/action";
-import { normalizeCartItems, CartItem } from "@/utils/cartUtils";
+import { normalizeCartItems } from "@/utils/cartUtils";
+import type { CartItem } from "@/types/cart";
 
 // Re-export CartItem interface for convenience
 

@@ -1,23 +1,22 @@
 "use client";
 import React, { useEffect, useState } from "react";
-// import shopData from "@/components/Shop/shopData";
 import ProductItem from "@/components/Common/ProductItem";
 import Image from "next/image";
-import Link from "next/link";
-
 import { Swiper, SwiperSlide } from "swiper/react";
 import { useCallback, useRef } from "react";
 import "swiper/css/navigation";
 import "swiper/css";
-import { getShopData } from "@/lib/server/shopData";
+import { AppDispatch, useAppSelector } from "@/redux/store";
+import { useDispatch } from "react-redux";
+import { fetchProducts, selectProducts } from "@/redux/features/product-slice";
 
 const RecentlyViewdItems = () => {
-  const [shopData, setShopData] = useState([]);
+  const dispatch = useDispatch<AppDispatch>();
+  const shopData = useAppSelector(selectProducts);
+
   useEffect(() => {
-    getShopData().then((data) => {
-      setShopData(data);
-    })
-  }, [])
+      dispatch(fetchProducts({}));
+    }, [dispatch]);
 
   const sliderRef = useRef(null);
 

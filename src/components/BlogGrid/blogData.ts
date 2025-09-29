@@ -1,6 +1,6 @@
-import { BlogItem } from "@/types/blogItem";
+import { BlogItemType } from "@/types/ui";
 
-const blogData: BlogItem[] = [
+const blogData: BlogItemType[] = [
   {
     date: "Mar 27, 2022",
     views: 300000,

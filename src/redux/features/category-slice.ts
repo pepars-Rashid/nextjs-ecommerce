@@ -1,5 +1,7 @@
-import { CategoryWithCount, listCategoriesWithCounts } from "@/app/actions/action";
+import { listCategoriesWithCounts } from "@/app/actions/action";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import type { RootState } from '../store';
+import { CategoryWithCount } from "@/types/category";
 
 interface InitialState {
   items: CategoryWithCount[];
@@ -53,8 +55,6 @@ const categorieSlice = createSlice({
       });
   },
 });
-
-import type { RootState } from '../store';
 
 export const selectCategories = (state: RootState) => state.categoriesReducer.items;
 export const selectCategoriesLoading = (state: RootState) => state.categoriesReducer.isLoading;

@@ -1,11 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState } from "react";
-
-interface PreviewSliderType {
-  isModalPreviewOpen: boolean;
-  openPreviewModal: () => void;
-  closePreviewModal: () => void;
-}
+import { PreviewSliderType } from "@/types/ui";
 
 const PreviewSlider = createContext<PreviewSliderType | undefined>(undefined);
 

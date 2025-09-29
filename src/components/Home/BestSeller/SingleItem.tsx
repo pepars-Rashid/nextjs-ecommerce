@@ -54,7 +54,7 @@ const SingleItem = ({ item }: { item: Product }) => {
         toast.success('Item added to wishlist!');
       }
     } catch (error) {
-      toast.error('Failed to update wishlist. Please try again.');
+      toast.error('Failed to update wishlist. Please try again.', error);
     }
   };
 
@@ -199,7 +199,7 @@ const SingleItem = ({ item }: { item: Product }) => {
               isWishlistLoading 
                 ? 'text-gray-400 bg-gray-200 cursor-not-allowed'
                 : isInWishlist 
-                ? 'text-red-500 bg-white hover:text-red-600' 
+                ? 'text-red-500 bg-red hover:text-red-600' 
                 : 'text-dark bg-white hover:text-white hover:bg-blue'
             }`}
           >

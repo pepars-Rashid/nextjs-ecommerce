@@ -1,6 +1,6 @@
 "use server"
 import { db } from "@/database/db";
-import { and, asc, count, countDistinct, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray} from "drizzle-orm";
 import {
 	products,
 	productImages,
@@ -11,28 +11,10 @@ import {
 	wishlists,
 	wishlistItems,
 } from "@/database/schema";
-import type { Product } from "@/types/product";
 import { stackServerApp } from "@/stack-server";
-
-export type ListProductsParams = {
-	limit?: number;
-	offset?: number;
-	categoryIds?: number[];
-	sort?: "latest" | "price_asc" | "price_desc" | "latest" | "oldest";
-};
-
-export interface ListedProduct {
-  id: number;
-	title: string;
-	price: string;
-	discountedPrice: string;
-	reviewsCount: number;
-	description: string;
-	images: {
-		url: string;
-		kind: "thumbnail" | "preview";
-	}[];
-}
+import type { ListedProduct, Product } from "@/types/product";
+import { ListProductsParams } from "@/types/product";
+import { CategoryWithCount } from "@/types/category";
 
 export async function listProducts(params: ListProductsParams = {}): Promise<ListedProduct[]> {
   try {
@@ -135,8 +117,6 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
 // 	return { ...(row[0] as any), images: imgs };
 // }
 
-export type CategoryWithCount = { id: number; name: string; slug: string; productCount: number; imgUrl: string };
-
 export async function listCategoriesWithCounts(): Promise<CategoryWithCount[]> {
 	const rows = await db
 		.select({
@@ -154,31 +134,7 @@ export async function listCategoriesWithCounts(): Promise<CategoryWithCount[]> {
 	return rows as CategoryWithCount[];
 }
 
-export async function countProducts(params: { categoryIds?: number[] } = {}): Promise<number> {
-	const { categoryIds } = params;
-	try {
-		if (!categoryIds || categoryIds.length === 0) {
-			const rows = await db.select({ value: sql<number>`count(*)` }).from(products);
-			return Number((rows?.[0] as any)?.value ?? 0);
-		}
-		// Count distinct products that belong to any of the given categories
-		const rows = await db
-			.select({ value: countDistinct(productCategories.productId) })
-			.from(products)
-			.leftJoin(productCategories, eq(products.id, productCategories.productId))
-			
-			.where(inArray(productCategories.categoryId, categoryIds));
-
-		console.log("countProducts with categories called");	
-		return Number((rows?.[0] as any)?.value ?? 0);
-	} catch (error) {
-		console.error("Error counting products:", error);
-		return 0;
-	}
-}
-
-// Cart Actions
- async function getUserCart(ownerId: string) {
+async function getUserCart(ownerId: string) {
 	try {
 		let userCart = await db.select().from(carts).where(eq(carts.ownerId, ownerId)).limit(1);
 		
@@ -190,20 +146,34 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 			userCart = [newCart];
 		}
 
-		const cartItemsData = await db
-			.select({
-				id: cartItems.id,
-				productId: cartItems.productId,
-				titleSnapshot: cartItems.titleSnapshot,
-				imgSnapshot: cartItems.imgSnapshot,
-				unitPrice: cartItems.unitPrice,
-				unitDiscountedPrice: cartItems.unitDiscountedPrice,
-				quantity: cartItems.quantity,
-				createdAt: cartItems.createdAt,
-			})
-			.from(cartItems)
-			.where(eq(cartItems.cartId, userCart[0].id));
-
+		const cartItemsData = await db.query.cartItems.findMany({
+			columns: {
+				id: true,
+				quantity: true,
+			},
+			where: eq(cartItems.cartId, userCart[0].id),
+			with: {
+				product: {
+					columns: {
+						id: true,
+						title: true,
+						price: true,
+						discountedPrice: true,
+						description: true,
+					},
+					with: {
+						images: {
+							columns: {
+								url: true,
+								kind: true,
+							},
+							orderBy: (images, { asc }) => [asc(images.sortOrder)],
+						},
+					},
+				},
+			},
+		});
+		
 		return cartItemsData;
 	} catch (error) {
 		console.error('Error getting user cart:', error);
@@ -224,10 +194,6 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 			userCart = [newCart];
 		}
 
-		// Get product details for snapshot
-		const product = await db.select().from(products).where(eq(products.id, productId)).limit(1);
-		if (!product.length) throw new Error('Product not found');
-
 		// Check if item already exists in cart
 		const existingItem = await db
 			.select()
@@ -243,18 +209,9 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 				.where(eq(cartItems.id, existingItem[0].id));
 		} else {
 			// Add new item
-			const imgs = await db
-				.select({ url: productImages.url, kind: productImages.kind, sortOrder: productImages.sortOrder })
-				.from(productImages)
-				.where(eq(productImages.productId, productId));
-
 			await db.insert(cartItems).values({
 				cartId: userCart[0].id,
 				productId,
-				titleSnapshot: product[0].title,
-				imgSnapshot: imgs[0].url,
-				unitPrice: product[0].price,
-				unitDiscountedPrice: product[0].discountedPrice,
 				quantity,
 			});
 		}
@@ -314,39 +271,36 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 		}
 
 		// Get wishlist items with product details
-		const wishlistItemsData = await db
-			.select({
-				id: wishlistItems.id,
-				productId: wishlistItems.productId,
-				status: wishlistItems.status,
-				createdAt: wishlistItems.createdAt,
-				// Product details
-				title: products.title,
-				price: products.price,
-				discountedPrice: products.discountedPrice,
-				description: products.description,
-			})
-			.from(wishlistItems)
-			.innerJoin(products, eq(wishlistItems.productId, products.id))
-			.where(eq(wishlistItems.wishlistId, userWishlist[0].id));
+		const wishlistItemsData = await db.query.wishlistItems.findMany({
+			columns: {
+				id: true,
+				productId: true,
+			},
+			where: eq(wishlistItems.wishlistId, userWishlist[0].id),
+			with: {
+				product: {
+					columns: {
+						id: true,
+						title: true,
+						price: true,
+						discountedPrice: true,
+						description: true,
+					},
+				with: {
+						images: {
+							columns: {
+								url: true,
+								kind: true,
+							},
+							orderBy: (images, { asc }) => [asc(images.sortOrder)],
+						},
+					},	
+				},
+			},
+		});
 
-		// Get product images for each wishlist item
-		const wishlistWithImages = await Promise.all(
-			wishlistItemsData.map(async (item) => {
-				const images = await db
-					.select({ url: productImages.url, kind: productImages.kind, sortOrder: productImages.sortOrder })
-					.from(productImages)
-					.where(eq(productImages.productId, item.productId))
-					.orderBy(asc(productImages.sortOrder));
-				
-				return {
-					...item,
-					images: images || []
-				};
-			})
-		);
-
-		return wishlistWithImages;
+		return wishlistItemsData;
+			
 	} catch (error) {
 		console.error('Error getting user wishlist:', error);
 		return [];
@@ -380,7 +334,6 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 		await db.insert(wishlistItems).values({
 			wishlistId: userWishlist[0].id,
 			productId,
-			status: "available"
 		});
 
 		return { success: true };
@@ -406,23 +359,23 @@ export async function countProducts(params: { categoryIds?: number[] } = {}): Pr
 	}
 }
 
- async function isInWishlist(ownerId: string, productId: number): Promise<boolean> {
-	try {
-		const userWishlist = await db.select().from(wishlists).where(eq(wishlists.ownerId, ownerId)).limit(1);
-		if (!userWishlist.length) return false;
+//  async function isInWishlist(ownerId: string, productId: number): Promise<boolean> {
+// 	try {
+// 		const userWishlist = await db.select().from(wishlists).where(eq(wishlists.ownerId, ownerId)).limit(1);
+// 		if (!userWishlist.length) return false;
 
-		const item = await db
-			.select()
-			.from(wishlistItems)
-			.where(and(eq(wishlistItems.wishlistId, userWishlist[0].id), eq(wishlistItems.productId, productId)))
-			.limit(1);
+// 		const item = await db
+// 			.select()
+// 			.from(wishlistItems)
+// 			.where(and(eq(wishlistItems.wishlistId, userWishlist[0].id), eq(wishlistItems.productId, productId)))
+// 			.limit(1);
 
-		return item.length > 0;
-	} catch (error) {
-		console.error('Error checking wishlist status:', error);
-		return false;
-	}
-}
+// 		return item.length > 0;
+// 	} catch (error) {
+// 		console.error('Error checking wishlist status:', error);
+// 		return false;
+// 	}
+// }
 
 // User-specific Cart Actions (with Stack Auth)
 export async function addToCartForUser(productId: number, quantity: number = 1) {
@@ -482,10 +435,10 @@ export async function getUserWishlistForUser() {
 	return await getUserWishlist(user.id);
 }
 
-export async function isInWishlistForUser(productId: number): Promise<boolean> {
-	const user = await stackServerApp.getUser();
-	if (!user) throw new Error('Not authenticated');
+// export async function isInWishlistForUser(productId: number): Promise<boolean> {
+// 	const user = await stackServerApp.getUser();
+// 	if (!user) throw new Error('Not authenticated');
 
-	console.log("isInWishlistForUser called for user");
-	return await isInWishlist(user.id, productId);
-}
+// 	console.log("isInWishlistForUser called for user");
+// 	return await isInWishlist(user.id, productId);
+// }

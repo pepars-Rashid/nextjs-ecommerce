@@ -5,7 +5,7 @@ import { Product } from "@/types/product";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { setCurrentProduct } from "@/redux/features/product-slice";
 import { addCartItemAsync } from "@/redux/features/cart-slice";
-import { addWishlistItemAsync, removeWishlistItemAsync, selectIsInWishlist, checkIsInWishlistAsync } from "@/redux/features/wishlist-slice";
+import { addWishlistItemAsync, removeWishlistItemAsync, selectIsInWishlist} from "@/redux/features/wishlist-slice";
 import { useDispatch} from "react-redux";
 import { AppDispatch, useAppSelector } from "@/redux/store";
 import toast from "react-hot-toast";
@@ -128,7 +128,7 @@ const ProductItem = ({ item }: { item: Product }) => {
               isWishlistLoading 
                 ? 'text-gray-400 bg-gray-200 cursor-not-allowed'
                 : isInWishlist 
-                ? 'text-red-500 bg-white hover:text-red-600' 
+                ? 'text-red-500 bg-red hover:text-red-600' 
                 : 'text-dark bg-white hover:text-blue'
             }`}
           >

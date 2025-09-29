@@ -1,5 +1,5 @@
 import React from "react";
-import { Testimonial } from "@/types/testimonial";
+import { Testimonial } from "@/types/ui";
 import Image from "next/image";
 
 const SingleItem = ({ testimonial }: { testimonial: Testimonial }) => {

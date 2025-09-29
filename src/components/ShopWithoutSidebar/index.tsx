@@ -1,32 +1,41 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
-
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
 import CustomSelect from "../ShopWithSidebar/CustomSelect";
-import Pagination from "../Common/Pagination";
-
-// import shopData from "../Shop/shopData";
-import { getShopData, getProductsCount } from "@/lib/server/shopData";
+// import Pagination from "../Common/Pagination";
+import { useDispatch } from "react-redux";
+import { AppDispatch, useAppSelector } from "@/redux/store";
+import { fetchProducts, selectFilters, selectHasMore, selectProducts, selectProductsError, selectProductsLoading, selectTotalCount } from "@/redux/features/product-slice";
 
 const ShopWithoutSidebar = () => {
-  const [shopData, setShopData] = useState([]);
+  const dispatch = useDispatch<AppDispatch>();
+  
+  // Local UI state
   const [productStyle, setProductStyle] = useState("grid");
-  const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(1);
-  const pageSize = 9;
+  const [productSidebar, setProductSidebar] = useState(false);
+  const [stickyMenu, setStickyMenu] = useState(false);
+  
+  // Redux state
+  const products = useAppSelector(selectProducts);
+  const isLoading = useAppSelector(selectProductsLoading);
+  const error = useAppSelector(selectProductsError);
+  const filters = useAppSelector(selectFilters);
+  const totalCount = useAppSelector(selectTotalCount);
+  const hasMore = useAppSelector(selectHasMore);
 
   useEffect(() => {
-    const offset = (page - 1) * pageSize;
-    getShopData({ limit: pageSize, offset }).then((data) => {
-      setShopData(data as any);
-    });
-  }, [page]);
+      dispatch(fetchProducts({}));
+    }, [dispatch]);
 
-  useEffect(() => {
-    getProductsCount().then((count) => setTotalCount(count));
-  }, []);
+    // Load more products (pagination)
+    const loadMoreProducts = () => {
+      dispatch(fetchProducts({ 
+        ...filters,
+        append: true 
+      }));
+    };
 
   const options = [
     { label: "Latest Products", value: "0" },
@@ -52,8 +61,12 @@ const ShopWithoutSidebar = () => {
                     <CustomSelect options={options} />
 
                     <p>
-                      Showing <span className="text-dark">{Math.min((page - 1) * pageSize + 1, totalCount)}-{Math.min(page * pageSize, totalCount)}</span> of <span className="text-dark">{totalCount}</span> Products
+                      Showing <span className="text-dark">{products.length}</span> of <span className="text-dark">{totalCount}</span> Products
                     </p>
+
+                    {isLoading && <span className="text-blue">Loading...</span>}
+                    {error && <span className="text-red-500">Error: {error}</span>}
+
                   </div>
 
                   {/* <!-- top bar right --> */}
@@ -141,11 +154,11 @@ const ShopWithoutSidebar = () => {
               <div
                 className={`${
                   productStyle === "grid"
-                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-7.5 gap-y-9"
+                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-7.5 gap-y-9"
                     : "flex flex-col gap-7.5"
                 }`}
               >
-                {shopData.map((item, key) =>
+                {products.map((item, key) =>
                   productStyle === "grid" ? (
                     <SingleGridItem item={item} key={key} />
                   ) : (
@@ -155,11 +168,24 @@ const ShopWithoutSidebar = () => {
               </div>
               {/* <!-- Products Grid Tab Content End --> */}
 
-              {/* <!-- Products Pagination Start --> */}
-              <Pagination currentPage={page} totalItems={totalCount} pageSize={pageSize} onPageChange={(p) => setPage(p)} />
-              {/* <!-- Products Pagination End --> */}
-            </div>
-            {/* // <!-- Content End --> */}
+              {/* <!-- Load More Button Start --> */}
+              {products.length > 0 && (
+                <div className="text-center mt-12.5">
+                  <button
+                    onClick={loadMoreProducts}
+                    disabled={isLoading || !hasMore}
+                    className={`inline-flex font-medium text-custom-sm py-3 px-7 sm:px-12.5 rounded-md border ease-out duration-200 ${
+                      isLoading || !hasMore
+                        ? 'bg-gray-2 text-gray-5 border-gray-3 cursor-not-allowed'
+                        : 'border-gray-3 bg-gray-1 text-dark hover:bg-dark hover:text-white hover:border-transparent'
+                    }`}
+                  >
+                    {isLoading ? 'Loading...' : hasMore ? 'Load More' : 'No More Products'}
+                  </button>
+                </div>
+              )}
+              </div>
+              {/* <!-- Load More Button End --> */}
           </div>
         </div>
       </section>
