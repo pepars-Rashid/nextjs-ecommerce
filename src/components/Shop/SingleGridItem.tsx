@@ -4,7 +4,7 @@ import { Product } from "@/types/product";
 import { useModalContext } from "@/app/context/QuickViewModalContext";
 import { setCurrentProduct } from "@/redux/features/product-slice";
 import { addCartItemAsync } from "@/redux/features/cart-slice";
-import { addWishlistItemAsync } from "@/redux/features/wishlist-slice";
+import { addWishlistItemAsync, removeWishlistItemAsync, selectIsInWishlist } from "@/redux/features/wishlist-slice";
 import { useDispatch } from "react-redux";
 import { AppDispatch, useAppSelector } from "@/redux/store";
 import toast from "react-hot-toast";
@@ -15,11 +15,16 @@ const SingleGridItem = ({ item }: { item: Product }) => {
   const { openModal } = useModalContext();
   const dispatch = useDispatch<AppDispatch>();
   const addStatus = useAppSelector((state) => state.cartReducer.addStatus);
+  const isInWishlist = useAppSelector((state) => selectIsInWishlist(state, item.id));
   const isAddingToCart = addStatus === 'pending';
   
   // Wishlist selectors
   const wishlistAddStatus = useAppSelector((state) => state.wishlistReducer.addStatus);
+  const wishlistRemoveStatus = useAppSelector((state) => state.wishlistReducer.removeStatus);
+  const isRemovingFromWishlist = wishlistRemoveStatus === 'pending';
   const isAddingToWishlist = wishlistAddStatus === 'pending';
+
+  const isWishlistLoading = isAddingToWishlist || isRemovingFromWishlist;
 
   // update the QuickView state
   const handleQuickViewUpdate = () => {
@@ -41,10 +46,15 @@ const SingleGridItem = ({ item }: { item: Product }) => {
 
   const handleItemToWishList = async () => {
     try {
-      await dispatch(addWishlistItemAsync(item.id)).unwrap();
-      toast.success('Item added to wishlist!');
+      if (isInWishlist) {
+        await dispatch(removeWishlistItemAsync(item.id)).unwrap();
+        toast.success('Item removed from wishlist!');
+      } else {
+        await dispatch(addWishlistItemAsync(item.id)).unwrap();
+        toast.success('Item added to wishlist!');
+      }
     } catch (error) {
-      toast.error('Failed to add item to wishlist. Please try again.');
+      toast.error('Failed to update wishlist. Please try again.', error);
     }
   };
 
@@ -107,16 +117,18 @@ const SingleGridItem = ({ item }: { item: Product }) => {
 
           <button
             onClick={() => handleItemToWishList()}
-            disabled={isAddingToWishlist}
+            disabled={isWishlistLoading}
             aria-label="button for favorite select"
             id="favOne"
             className={`flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 ${
-              isAddingToWishlist 
-                ? 'text-blue bg-blue-light-2 cursor-not-allowed' 
+              isWishlistLoading
+                ? 'text-gray-400 bg-gray-200 cursor-not-allowed'
+                : isInWishlist 
+                ? 'text-red-500 bg-red hover:text-red-600' 
                 : 'text-dark bg-white hover:text-blue'
             }`}
           >
-            {isAddingToWishlist ? (
+            {isWishlistLoading ? (
               <div className="w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin"></div>
             ) : (
               <svg
