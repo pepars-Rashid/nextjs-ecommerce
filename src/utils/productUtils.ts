@@ -35,11 +35,10 @@ export function normalizeProducts(listedProducts: ListedProduct[]): Product[] {
 }
 
 /**
- * Normalizes a single product from getProduct (which already returns Product type)
- * This is for consistency, but getProduct already returns the correct format
+ * Normalizes a single product from getProduct response
  */
-export function normalizeSingleProduct(product: Product): Product {
-  return product; // getProduct already returns the correct format
+export function normalizeSingleProduct(listedProduct: ListedProduct): Product {
+  return normalizeProduct(listedProduct);
 }
 
 /**

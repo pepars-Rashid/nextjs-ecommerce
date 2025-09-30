@@ -29,6 +29,7 @@ export interface ListedProduct {
   discountedPrice: string;
   reviewsCount?: number;
   description?: string;
+  detailedDescription?: string;
   images: ListedProductImage[];
 }
 

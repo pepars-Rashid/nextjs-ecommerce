@@ -105,17 +105,38 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
   }
 }
 
-// export async function getProduct(productId: number): Promise<Product | null> {
-// 	const row = await db.select().from(products).where(eq(products.id, productId)).limit(1);
-// 	if (!row.length) return null;
-// 	const imgs = await db
-// 		.select({ url: productImages.url, kind: productImages.kind, sortOrder: productImages.sortOrder })
-// 		.from(productImages)
-// 		.where(eq(productImages.productId, productId));
-		
-// 	console.log("getProduct called");	
-// 	return { ...(row[0] as any), images: imgs };
-// }
+export async function getProduct(productId: number): Promise<ListedProduct | null> {
+	try {
+		const product = await db.query.products.findFirst({
+			columns: {
+				id: true,
+				title: true,
+				price: true,
+				discountedPrice: true,
+				reviewsCount: true,
+				description: true,
+				detiledDescription: true,
+			},
+			where: eq(products.id, productId),
+			with: {
+				images: {
+					columns: {
+						url: true,
+						kind: true,
+					},
+					orderBy: (images, { asc }) => [asc(images.sortOrder)],
+			},},
+		}).catch(error => {
+			throw new Error(`Failed to fetch product: ${error.message}`);
+		});
+
+		console.log("getProduct called for productId:", productId);
+		return product as ListedProduct | null;
+	} catch (error) {
+		console.error("Error in getProduct:", error);
+		return null;
+	}
+}
 
 export async function listCategoriesWithCounts(): Promise<CategoryWithCount[]> {
 	const rows = await db
