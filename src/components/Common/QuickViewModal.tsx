@@ -8,7 +8,7 @@ import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
-import { setCurrentProduct, resetCurrentProduct, selectCurrentProduct } from "@/redux/features/product-slice";
+import { selectCurrentProduct } from "@/redux/features/product-slice";
 
 const QuickViewModal = () => {
   const { isModalOpen, closeModal } = useModalContext();

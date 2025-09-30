@@ -10,7 +10,6 @@ import toast from "react-hot-toast";
 import Image from "next/image";
 import Link from "next/link";
 import { addWishlistItemAsync, removeWishlistItemAsync, selectIsInWishlist} from "@/redux/features/wishlist-slice";
-import { useEffect } from "react";
 
 const SingleItem = ({ item }: { item: Product }) => {
   const { openModal } = useModalContext();
