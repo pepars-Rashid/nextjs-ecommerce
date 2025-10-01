@@ -84,8 +84,6 @@ export const removeCartItemAsync = createAsyncThunk(
 export const clearCartAsync = createAsyncThunk(
   'cart/clearCart',
   async () => {
-    // Since we don't have a clearCart function, we'll remove items one by one
-    // This could be optimized if you add a clearCart function later
     const response = await getUserCartForUser();
     const items = normalizeCartItems(response);
     
@@ -94,7 +92,6 @@ export const clearCartAsync = createAsyncThunk(
       await removeFromCartForUser(item.id);
     }
     
-    // Return empty array
     return [];
   }
 );

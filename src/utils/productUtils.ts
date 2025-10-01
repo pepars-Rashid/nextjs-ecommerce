@@ -1,10 +1,6 @@
 import { Product, ListedProduct } from "@/types/product";
 
-// Use the ListedProduct interface from actions
-
-/**
- * Normalizes a single listed product to client Product interface
- */
+// Normalizes a single listed product to client Product interface
 export function normalizeProduct(listedProduct: ListedProduct): Product {
   const thumbnails = listedProduct.images
     .filter(img => img.kind === "thumbnail")
@@ -27,23 +23,12 @@ export function normalizeProduct(listedProduct: ListedProduct): Product {
   };
 }
 
-/**
- * Normalizes an array of listed products to client Product interface
- */
+// Normalizes an array of listed products to client Product interface
 export function normalizeProducts(listedProducts: ListedProduct[]): Product[] {
   return listedProducts.map(normalizeProduct);
 }
 
-/**
- * Normalizes a single product from getProduct response
- */
-export function normalizeSingleProduct(listedProduct: ListedProduct): Product {
-  return normalizeProduct(listedProduct);
-}
-
-/**
- * Creates an empty product with default values
- */
+// Creates an empty product with default values
 export function createEmptyProduct(): Product {
   return {
     title: "",

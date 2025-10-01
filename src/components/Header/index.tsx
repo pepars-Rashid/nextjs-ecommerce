@@ -12,8 +12,10 @@ import { useCartModalContext } from "@/app/context/CartSidebarModalContext";
 import Image from "next/image";
 import { UserButton } from "@stackframe/stack";
 import { useUser } from "@stackframe/stack";
+import { useRouter } from "next/navigation";
 
 const Header = () => {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
@@ -390,8 +392,8 @@ const Header = () => {
             <div className="hidden xl:block">
               <ul className="flex items-center gap-5.5">
                 <li className="py-4">
-                  <a
-                    href="#"
+                  <button
+                    onClick={() => router.refresh()}
                     className="flex items-center gap-1.5 font-medium text-custom-sm text-dark hover:text-blue"
                   >
                     <svg
@@ -411,8 +413,8 @@ const Header = () => {
                         fill=""
                       />
                     </svg>
-                    Recently Viewed
-                  </a>
+                    Refresh
+                  </button>
                 </li>
 
                 <li className="py-4">

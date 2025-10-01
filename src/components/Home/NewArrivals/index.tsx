@@ -1,6 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import Image from "next/image";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import ProductItem from "@/components/Common/ProductItem";
 import { useDispatch } from "react-redux";

@@ -4,7 +4,6 @@ import Breadcrumb from "../Common/Breadcrumb";
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
 import CustomSelect from "../ShopWithSidebar/CustomSelect";
-// import Pagination from "../Common/Pagination";
 import { useDispatch } from "react-redux";
 import { AppDispatch, useAppSelector } from "@/redux/store";
 import { fetchProducts, selectFilters, selectHasMore, selectProducts, selectProductsError, selectProductsLoading, selectTotalCount } from "@/redux/features/product-slice";
@@ -14,9 +13,7 @@ const ShopWithoutSidebar = () => {
   
   // Local UI state
   const [productStyle, setProductStyle] = useState("grid");
-  const [productSidebar, setProductSidebar] = useState(false);
-  const [stickyMenu, setStickyMenu] = useState(false);
-  
+    
   // Redux state
   const products = useAppSelector(selectProducts);
   const isLoading = useAppSelector(selectProductsLoading);

@@ -1,5 +1,3 @@
-"use client";
-import { useState, useEffect } from "react";
 import "../css/euclid-circular-a-font.css";
 import "../css/style.css";
 import Header from "../../components/Header";
@@ -14,54 +12,35 @@ import { PreviewSliderProvider } from "../context/PreviewSliderContext";
 import PreviewSliderModal from "@/components/Common/PreviewSlider";
 
 import ScrollToTop from "@/components/Common/ScrollToTop";
-import PreLoader from "@/components/Common/PreLoader";
 import { StackProvider, StackTheme } from "@stackframe/stack";
-import { stackClientApp } from "@/stack-client";
+import { stackServerApp } from "@/stack-server";
 import { Toaster } from "react-hot-toast";
 
-export default function RootLayout({
+export default function Layout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    setTimeout(() => setLoading(false), 1000);
-  }, []);
-
   return (
-    <html lang="en" suppressHydrationWarning={true}>
-      <body>
-        {loading ? (
-          <PreLoader />
-        ) : (
-          <>
-            <StackProvider app={stackClientApp}>
-              
-            <ReduxProvider>
-              <CartModalProvider>
-                <ModalProvider>
-                  <PreviewSliderProvider>
-                    <Header />
-                        <StackTheme>
-                    {children}
-                    <Toaster/>
-                        </StackTheme>
-                    <QuickViewModal />
-                    <CartSidebarModal />
-                    <PreviewSliderModal />
-                  </PreviewSliderProvider>
-                </ModalProvider>
-              </CartModalProvider>
-            </ReduxProvider>
-              
-            </StackProvider>
-            <ScrollToTop />
-            <Footer />
-          </>
-        )}
-      </body>
-    </html>
+    <StackProvider app={stackServerApp}>
+      <ReduxProvider>
+        <CartModalProvider>
+          <ModalProvider>
+            <PreviewSliderProvider>
+              <Header />
+              <StackTheme>
+                {children}
+                <Toaster/>
+              </StackTheme>
+              <QuickViewModal />
+              <CartSidebarModal />
+              <PreviewSliderModal />
+              <ScrollToTop />
+              <Footer />
+            </PreviewSliderProvider>
+          </ModalProvider>
+        </CartModalProvider>
+      </ReduxProvider>
+    </StackProvider>
   );
 }

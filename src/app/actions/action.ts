@@ -12,7 +12,7 @@ import {
 	wishlistItems,
 } from "@/database/schema";
 import { stackServerApp } from "@/stack-server";
-import type { ListedProduct, Product } from "@/types/product";
+import type { ListedProduct } from "@/types/product";
 import { ListProductsParams } from "@/types/product";
 import { CategoryWithCount } from "@/types/category";
 
@@ -380,24 +380,6 @@ async function getUserCart(ownerId: string) {
 	}
 }
 
-//  async function isInWishlist(ownerId: string, productId: number): Promise<boolean> {
-// 	try {
-// 		const userWishlist = await db.select().from(wishlists).where(eq(wishlists.ownerId, ownerId)).limit(1);
-// 		if (!userWishlist.length) return false;
-
-// 		const item = await db
-// 			.select()
-// 			.from(wishlistItems)
-// 			.where(and(eq(wishlistItems.wishlistId, userWishlist[0].id), eq(wishlistItems.productId, productId)))
-// 			.limit(1);
-
-// 		return item.length > 0;
-// 	} catch (error) {
-// 		console.error('Error checking wishlist status:', error);
-// 		return false;
-// 	}
-// }
-
 // User-specific Cart Actions (with Stack Auth)
 export async function addToCartForUser(productId: number, quantity: number = 1) {
 	const user = await stackServerApp.getUser();
@@ -455,11 +437,3 @@ export async function getUserWishlistForUser() {
 	console.log("getUserWishlistForUser called for user");
 	return await getUserWishlist(user.id);
 }
-
-// export async function isInWishlistForUser(productId: number): Promise<boolean> {
-// 	const user = await stackServerApp.getUser();
-// 	if (!user) throw new Error('Not authenticated');
-
-// 	console.log("isInWishlistForUser called for user");
-// 	return await isInWishlist(user.id, productId);
-// }

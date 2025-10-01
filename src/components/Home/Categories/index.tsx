@@ -1,7 +1,6 @@
 "use client";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { useCallback, useRef, useEffect } from "react";
-import Image from "next/image";
 import { useDispatch } from "react-redux";
 import { useAppSelector } from "@/redux/store";
 import { fetchCategoriesWithCounts, selectCategories, selectCategoriesLoading, selectCategoriesError } from "@/redux/features/category-slice";
@@ -38,13 +37,6 @@ const Categories = () => {
   useEffect(() => {
     dispatch(fetchCategoriesWithCounts());
   }, [dispatch]);
-
-  // Transform CategoryWithCount to Category format expected by SingleItem
-  const data = categories.map(category => ({
-    id: category.id,
-    title: category.name,
-    img: category.imgUrl
-  }));
 
   return (
     <>
@@ -176,7 +168,7 @@ const Categories = () => {
               },
             }}
           >                
-            {data.map((item, key) => (
+            {categories.map((item, key) => (
               <SwiperSlide key={key}>
                 <SingleItem item={item} />
               </SwiperSlide>

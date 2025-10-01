@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Product } from "@/types/product";
 import { listProducts, getProduct } from "@/app/actions/action";
 import type { ListProductsParams } from "@/types/product";
-import { normalizeProducts, createEmptyProduct, normalizeSingleProduct } from "@/utils/productUtils";
+import { normalizeProducts, createEmptyProduct, normalizeProduct } from "@/utils/productUtils";
 import { ProductSortOption } from "@/types/common";
 
 interface InitialState {
@@ -50,7 +50,7 @@ const initialState: InitialState = {
 
 // Extended params interface for better type safety
 interface FetchProductsParams extends ListProductsParams {
-  append?: boolean; // For pagination - append to existing products
+  append?: boolean;
 }
 
 // Async thunks
@@ -79,7 +79,7 @@ export const fetchProductById = createAsyncThunk(
       if (!response) {
         throw new Error('Product not found');
       }
-      return normalizeSingleProduct(response);
+      return normalizeProduct(response);
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch product');
     }
