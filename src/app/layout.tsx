@@ -1,6 +1,6 @@
 export const metadata = {
   title: 'NextCommerce',
-  description: 'Next.js E-commerce template',
+  description: 'Next.js E-commerce application',
 };
 
 export default function RootLayout({
