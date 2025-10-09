@@ -3,7 +3,6 @@ import { db } from "@/database/db";
 import { and, asc, count, desc, eq, inArray} from "drizzle-orm";
 import {
 	products,
-	productImages,
 	categories,
 	productCategories,
 	carts,
@@ -78,19 +77,11 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
 		discountedPrice: true,
 		reviewsCount: true,
 		description: true,
+		imagesArray: true,
 	  },
 	  limit: limit,
 	  offset: offset,
 	  where: whereClause,
-	  with: {
-		images: {
-		  columns: {
-			url: true,
-			kind: true,
-		  },
-		  orderBy: (images, { asc }) => [asc(images.sortOrder)],
-		},
-	  },
 	  orderBy: orderByClause,
 	}).catch(error => {
 	  throw new Error(`Failed to fetch products: ${error.message}`);
@@ -115,17 +106,10 @@ export async function getProduct(productId: number): Promise<ListedProduct | nul
 				discountedPrice: true,
 				reviewsCount: true,
 				description: true,
+				imagesArray: true,
 				detiledDescription: true,
 			},
 			where: eq(products.id, productId),
-			with: {
-				images: {
-					columns: {
-						url: true,
-						kind: true,
-					},
-					orderBy: (images, { asc }) => [asc(images.sortOrder)],
-			},},
 		}).catch(error => {
 			throw new Error(`Failed to fetch product: ${error.message}`);
 		});
@@ -144,12 +128,12 @@ export async function listCategoriesWithCounts(): Promise<CategoryWithCount[]> {
 			id: categories.id,
 			name: categories.name,
 			slug: categories.slug,
-			imgUrl: categories.imgUrl,
+			img: categories.img,
 			productCount: count(productCategories.productId).mapWith(Number),
 		})
 		.from(categories)
 		.leftJoin(productCategories, eq(categories.id, productCategories.categoryId))
-		.groupBy(categories.id, categories.name, categories.slug, categories.imgUrl);
+		.groupBy(categories.id, categories.name, categories.slug, categories.img);
 
 	console.log("listCategoriesWithCounts called");	
 	return rows as CategoryWithCount[];
@@ -180,16 +164,8 @@ async function getUserCart(ownerId: string) {
 						title: true,
 						price: true,
 						discountedPrice: true,
+						imagesArray: true,
 						description: true,
-					},
-					with: {
-						images: {
-							columns: {
-								url: true,
-								kind: true,
-							},
-							orderBy: (images, { asc }) => [asc(images.sortOrder)],
-						},
 					},
 				},
 			},
@@ -305,17 +281,9 @@ async function getUserCart(ownerId: string) {
 						title: true,
 						price: true,
 						discountedPrice: true,
+						imagesArray: true,
 						description: true,
 					},
-				with: {
-						images: {
-							columns: {
-								url: true,
-								kind: true,
-							},
-							orderBy: (images, { asc }) => [asc(images.sortOrder)],
-						},
-					},	
 				},
 			},
 		});

@@ -18,8 +18,8 @@ export interface Product {
 
 // DB-listed product returned by listProducts (string prices, images with kind/url)
 export type ListedProductImage = {
+  key: string;
   url: string;
-  kind: 'thumbnail' | 'preview';
 };
 
 export interface ListedProduct {
@@ -27,10 +27,10 @@ export interface ListedProduct {
   title: string;
   price: string;
   discountedPrice: string;
-  reviewsCount?: number;
-  description?: string;
+  reviewsCount: number;
+  description: string;
   detailedDescription?: string;
-  images: ListedProductImage[];
+  imagesArray: ListedProductImage[];
 }
 
 // List Products Parameters

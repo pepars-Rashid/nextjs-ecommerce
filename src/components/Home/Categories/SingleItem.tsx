@@ -7,7 +7,7 @@ const SingleItem = ({ item }: { item: CategoryWithCount }) => {
   return (
     <Link href="/shop-with-sidebar" className="group flex flex-col items-center">
       <div className="max-w-[130px] w-full bg-[#F2F3F8] h-32.5 rounded-full flex items-center justify-center mb-4">
-        <Image src={item.imgUrl} alt="Category" width={82} height={62} />
+        <Image src={item.img.url} alt="Category" width={82} height={62} />
       </div>
 
       <div className="flex justify-center">

@@ -2,13 +2,12 @@ import { Product, ListedProduct } from "@/types/product";
 
 // Normalizes a single listed product to client Product interface
 export function normalizeProduct(listedProduct: ListedProduct): Product {
-  const thumbnails = listedProduct.images
-    .filter(img => img.kind === "thumbnail")
-    .map(img => img.url);
+  // Ensure we can handle missing or null imagesArray gracefully
+  const images = Array.isArray(listedProduct.imagesArray) ? listedProduct.imagesArray : [];
+  const urls = images.map((img) => img?.url).filter(Boolean) as string[];
 
-  const previews = listedProduct.images
-    .filter(img => img.kind === "preview")
-    .map(img => img.url);
+  const thumbnails = urls;
+  const previews = urls;
 
   return {
     id: listedProduct.id,

@@ -3,5 +3,5 @@ export type CategoryWithCount = {
     name: string;
     slug: string; 
     productCount: number;
-    imgUrl: string 
+    img: {key:string, url:string}
 };
