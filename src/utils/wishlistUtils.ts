@@ -1,19 +1,39 @@
 import { RawWishlistItemWithProduct, WishlistItem } from "@/types/wishlist";
 
+function extractImageUrls(productLike: any): { thumbnails: string[]; previews: string[] } {
+  if (Array.isArray(productLike?.imagesArray)) {
+    const urls = productLike.imagesArray.map((img: any) => img?.url).filter(Boolean) as string[];
+    return { thumbnails: urls, previews: urls };
+  }
+  if (Array.isArray(productLike?.images)) {
+    const urls = productLike.images.map((img: any) => img?.url).filter(Boolean) as string[];
+    return { thumbnails: urls, previews: urls };
+  }
+  if (productLike?.imgs && (Array.isArray(productLike.imgs.thumbnails) || Array.isArray(productLike.imgs.previews))) {
+    const thumbs = Array.isArray(productLike.imgs.thumbnails) ? productLike.imgs.thumbnails.filter(Boolean) : [];
+    const prevs = Array.isArray(productLike.imgs.previews) ? productLike.imgs.previews.filter(Boolean) : [];
+    const urls = thumbs.length ? thumbs : prevs;
+    const ensure = urls.length ? urls : [];
+    return { thumbnails: ensure, previews: ensure };
+  }
+  return { thumbnails: [], previews: [] };
+}
+
 // Function to normalize wishlist items from backend format to WishlistItem format
 export function normalizeWishlistItems(rawItems: RawWishlistItemWithProduct[] | any[]): WishlistItem[] {
   if (!rawItems || !Array.isArray(rawItems)) {
     return [];
   }
 
-  return rawItems.map((item) => {
-    const product = item.product || ({} as RawWishlistItemWithProduct['product']);
+  return rawItems.map((item: any) => {
+    const product = item?.product ?? {};
 
-    const thumbnails = product.images?.filter((img: any) => img.kind === 'thumbnail').map((img: any) => img.url) || [];
-    const previews = product.images?.filter((img: any) => img.kind === 'preview').map((img: any) => img.url) || [];
+    const { thumbnails, previews } = extractImageUrls(product);
 
-    const priceNum = typeof (product as any).price === 'string' ? parseFloat((product as any).price) : Number((product as any).price) || 0;
-    const discountedNum = typeof (product as any).discountedPrice === 'string' ? parseFloat((product as any).discountedPrice) : Number((product as any).discountedPrice) || 0;
+    const priceVal = (product as any).price;
+    const discountedVal = (product as any).discountedPrice;
+    const priceNum = typeof priceVal === 'string' ? parseFloat(priceVal) : Number(priceVal) || 0;
+    const discountedNum = typeof discountedVal === 'string' ? parseFloat(discountedVal) : Number(discountedVal) || 0;
 
     return {
       id: (product as any).id ?? item.productId, // prefer product id
@@ -21,12 +41,12 @@ export function normalizeWishlistItems(rawItems: RawWishlistItemWithProduct[] | 
       price: priceNum,
       discountedPrice: discountedNum,
       reviews: Number((product as any).reviewsCount ?? 0),
-      quantity: 1, // Wishlist items typically have quantity of 1
+      quantity: 1,
       status: 'available',
       imgs: {
         thumbnails,
         previews,
       },
-    };
+    } as WishlistItem;
   });
 }
