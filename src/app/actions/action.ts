@@ -74,6 +74,7 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
 		id: true,
 		title: true,
 		price: true,
+		productSlug: true,
 		discountedPrice: true,
 		reviewsCount: true,
 		description: true,
@@ -96,11 +97,12 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
   }
 }
 
-export async function getProduct(productId: number): Promise<ListedProduct | null> {
+export async function getProduct(productSlug: string): Promise<ListedProduct | null> {
 	try {
 		const product = await db.query.products.findFirst({
 			columns: {
 				id: true,
+				productSlug: true,
 				title: true,
 				price: true,
 				discountedPrice: true,
@@ -109,12 +111,12 @@ export async function getProduct(productId: number): Promise<ListedProduct | nul
 				imagesArray: true,
 				detiledDescription: true,
 			},
-			where: eq(products.id, productId),
+			where: eq(products.productSlug, productSlug),
 		}).catch(error => {
 			throw new Error(`Failed to fetch product: ${error.message}`);
 		});
 
-		console.log("getProduct called for productId:", productId);
+		console.log("getProduct called for productSlug:", productSlug);
 		return product as ListedProduct | null;
 	} catch (error) {
 		console.error("Error in getProduct:", error);

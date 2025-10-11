@@ -11,8 +11,10 @@ export function normalizeProduct(listedProduct: ListedProduct): Product {
 
   return {
     id: listedProduct.id,
+    productSlug: listedProduct.productSlug || '',
     title: listedProduct.title,
     price: parseFloat(listedProduct.price) || 0,
+    description: listedProduct.description,
     discountedPrice: parseFloat(listedProduct.discountedPrice) || 0,
     reviews: listedProduct.reviewsCount || 0,
     imgs: {
@@ -31,6 +33,9 @@ export function normalizeProducts(listedProducts: ListedProduct[]): Product[] {
 export function createEmptyProduct(): Product {
   return {
     title: "",
+    productSlug: "",
+    description: "",
+    detailedDescription: '',
     reviews: 0,
     price: 0,
     discountedPrice: 0,

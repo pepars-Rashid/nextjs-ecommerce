@@ -9,7 +9,10 @@ export type ProductImages = {
 // Core UI-facing product type (numeric prices, ready for display)
 export interface Product {
   id: number;
+  productSlug: string;
   title: string;
+  description: string;
+  detailedDescription?: string;
   price: number;
   discountedPrice: number;
   reviews: number;
@@ -24,6 +27,7 @@ export type ListedProductImage = {
 
 export interface ListedProduct {
   id: number;
+  productSlug?: string;
   title: string;
   price: string;
   discountedPrice: string;

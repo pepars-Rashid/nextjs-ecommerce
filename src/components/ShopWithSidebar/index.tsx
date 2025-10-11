@@ -11,17 +11,31 @@ import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
 import { useDispatch } from "react-redux";
 import { AppDispatch, useAppSelector } from "@/redux/store";
-import { fetchProducts, selectProducts, selectProductsLoading, selectProductsError, selectFilters, selectTotalCount, selectHasMore, updateFilters} from "@/redux/features/product-slice";
-import { fetchCategoriesWithCounts, selectCategories, selectCategoriesLoading, selectCategoriesError } from "@/redux/features/category-slice";
+import {
+  fetchProducts,
+  selectProducts,
+  selectProductsLoading,
+  selectProductsError,
+  selectFilters,
+  selectTotalCount,
+  selectHasMore,
+  updateFilters,
+} from "@/redux/features/product-slice";
+import {
+  fetchCategoriesWithCounts,
+  selectCategories,
+  selectCategoriesLoading,
+  selectCategoriesError,
+} from "@/redux/features/category-slice";
 
 const ShopWithSidebar = () => {
   const dispatch = useDispatch<AppDispatch>();
-  
+
   // Local UI state
   const [productStyle, setProductStyle] = useState("grid");
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
-  
+
   // Redux state
   const products = useAppSelector(selectProducts);
   const isLoading = useAppSelector(selectProductsLoading);
@@ -29,7 +43,7 @@ const ShopWithSidebar = () => {
   const filters = useAppSelector(selectFilters);
   const totalCount = useAppSelector(selectTotalCount);
   const hasMore = useAppSelector(selectHasMore);
-  
+
   // Categories state
   const categories = useAppSelector(selectCategories);
   const categoriesLoading = useAppSelector(selectCategoriesLoading);
@@ -52,21 +66,29 @@ const ShopWithSidebar = () => {
 
   // Handle sort change
   const handleSortChange = (sortValue: string) => {
-    const newSort = sortValue as "latest" | "price_asc" | "price_desc" | "oldest";
+    const newSort = sortValue as
+      | "latest"
+      | "price_asc"
+      | "price_desc"
+      | "oldest";
     dispatch(updateFilters({ sort: newSort, offset: 0 }));
-    dispatch(fetchProducts({
+    dispatch(
+      fetchProducts({
         ...filters,
         sort: newSort,
-        offset: 0
-      }));
+        offset: 0,
+      })
+    );
   };
 
   // Load more products (pagination)
   const loadMoreProducts = () => {
-    dispatch(fetchProducts({ 
-      ...filters,
-      append: true 
-    }));
+    dispatch(
+      fetchProducts({
+        ...filters,
+        append: true,
+      })
+    );
   };
 
   const genders = [
@@ -169,41 +191,31 @@ const ShopWithSidebar = () => {
                   </div>
 
                   {/* <!-- category box --> */}
-<div>
-  {categoriesLoading && (
-    <div className="flex items-center justify-center">
-      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-      <span className="text-gray-600">Loading categories...</span>
-    </div>
-  )}
-  
-  {categoriesError && (
-    <div className="text-red-600 text-sm">
-      Error loading categories: {categoriesError}
-      <button 
-        onClick={() => dispatch(fetchCategoriesWithCounts())}
-        className="ml-2 text-blue-600 underline hover:no-underline"
-      >
-        Retry
-      </button>
-    </div>
-  )}
-  
-  {/* Always render CategoryDropdown, but you might want to handle empty state */}
-  <CategoryDropdown 
-    categories={categories} 
-  />
-</div>
-                  
+                  <div>
+                    {categoriesLoading && (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                        <span className="text-gray-600">
+                          Loading categories...
+                        </span>
+                      </div>
+                    )}
 
-                  {/* <!-- gender box --> */}
-                  <GenderDropdown genders={genders} />
+                    {categoriesError && (
+                      <div className="text-red-600 text-sm">
+                        Error loading categories: {categoriesError}
+                        <button
+                          onClick={() => dispatch(fetchCategoriesWithCounts())}
+                          className="ml-2 text-blue-600 underline hover:no-underline"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    )}
 
-                  {/* // <!-- size box --> */}
-                  <SizeDropdown />
-
-                  {/* // <!-- color box --> */}
-                  <ColorsDropdwon />
+                    {/* Always render CategoryDropdown, but you might want to handle empty state */}
+                    <CategoryDropdown categories={categories} />
+                  </div>
 
                   {/* // <!-- price range box --> */}
                   <PriceDropdown />
@@ -218,18 +230,22 @@ const ShopWithSidebar = () => {
                 <div className="flex items-center justify-between">
                   {/* <!-- top bar left --> */}
                   <div className="flex flex-wrap items-center gap-4">
-                    <CustomSelect 
-                      options={sortOptions} 
+                    <CustomSelect
+                      options={sortOptions}
                       onSelectionChange={handleSortChange}
                       value={filters.sort}
                     />
 
                     <p>
-                      Showing <span className="text-dark">{products.length}</span> of <span className="text-dark">{totalCount}</span> Products
+                      Showing{" "}
+                      <span className="text-dark">{products.length}</span> of{" "}
+                      <span className="text-dark">{totalCount}</span> Products
                     </p>
 
                     {isLoading && <span className="text-blue">Loading...</span>}
-                    {error && <span className="text-red-500">Error: {error}</span>}
+                    {error && (
+                      <span className="text-red-500">Error: {error}</span>
+                    )}
                   </div>
 
                   {/* <!-- top bar right --> */}
@@ -339,11 +355,15 @@ const ShopWithSidebar = () => {
                     disabled={isLoading || !hasMore}
                     className={`inline-flex font-medium text-custom-sm py-3 px-7 sm:px-12.5 rounded-md border ease-out duration-200 ${
                       isLoading || !hasMore
-                        ? 'bg-gray-2 text-gray-5 border-gray-3 cursor-not-allowed'
-                        : 'border-gray-3 bg-gray-1 text-dark hover:bg-dark hover:text-white hover:border-transparent'
+                        ? "bg-gray-2 text-gray-5 border-gray-3 cursor-not-allowed"
+                        : "border-gray-3 bg-gray-1 text-dark hover:bg-dark hover:text-white hover:border-transparent"
                     }`}
                   >
-                    {isLoading ? 'Loading...' : hasMore ? 'Load More' : 'No More Products'}
+                    {isLoading
+                      ? "Loading..."
+                      : hasMore
+                      ? "Load More"
+                      : "No More Products"}
                   </button>
                 </div>
               )}

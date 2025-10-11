@@ -123,6 +123,12 @@ export const menuData: Menu[] = [
         newTab: false,
         path: "/blogs/blog-details",
       },
+      {
+        id: 75,
+        title: "All blog data still static",
+        newTab: false,
+        path: "/blogs/blog-details",
+      },
     ],
   },
 ];

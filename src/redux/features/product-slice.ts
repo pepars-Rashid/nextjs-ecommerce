@@ -70,12 +70,12 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
-// Fetch single product by ID
-export const fetchProductById = createAsyncThunk(
-  'product/fetchProductById',
-  async (productId: number, { rejectWithValue }) => {
+// Fetch single product by slug
+export const fetchProductBySlug = createAsyncThunk(
+  'product/fetchProductBySlug',
+  async (productSlug: string, { rejectWithValue }) => {
     try {
-      const response = await getProduct(productId);
+      const response = await getProduct(productSlug);
       if (!response) {
         throw new Error('Product not found');
       }
@@ -164,17 +164,17 @@ export const productSlice = createSlice({
         state.error = action.payload as string || 'Failed to fetch products';
       })
       
-      // fetchProductById cases
-      .addCase(fetchProductById.pending, (state) => {
+      // fetchProductBySlug cases
+      .addCase(fetchProductBySlug.pending, (state) => {
         state.currentProductLoading = true;
         state.currentProductError = null;
       })
-      .addCase(fetchProductById.fulfilled, (state, action) => {
+      .addCase(fetchProductBySlug.fulfilled, (state, action) => {
         state.currentProduct = action.payload;
         state.currentProductLoading = false;
         state.currentProductError = null;
       })
-      .addCase(fetchProductById.rejected, (state, action) => {
+      .addCase(fetchProductBySlug.rejected, (state, action) => {
         state.currentProductLoading = false;
         state.currentProductError = action.payload as string || 'Failed to fetch product';
       });

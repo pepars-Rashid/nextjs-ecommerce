@@ -9,10 +9,10 @@ export const metadata: Metadata = {
 };
 
 const ProductDetailsPage = async ({ params }: { params: Promise<{ id: string }> }) => {
-  const { id } = await params;
+  const { id: productSlug } = await params;
   return (
     <main>
-      <ProductDetails productId={parseInt(id)} />
+      <ProductDetails productSlug={productSlug} />
     </main>
   );
 };
