@@ -6,9 +6,9 @@ import SingleListItem from "../Shop/SingleListItem";
 import CustomSelect from "../ShopWithSidebar/CustomSelect";
 import { useDispatch } from "react-redux";
 import { AppDispatch, useAppSelector } from "@/redux/store";
-import { fetchProducts, selectFilters, selectHasMore, selectProducts, selectProductsError, selectProductsLoading, selectTotalCount } from "@/redux/features/product-slice";
+import { fetchProducts, selectFilters, selectHasMore, selectProducts, selectProductsError, selectProductsLoading, selectTotalCount, updateFilters, clearProducts } from "@/redux/features/product-slice";
 
-const ShopWithoutSidebar = () => {
+const ShopWithoutSidebar = ({ categorySlug }: { categorySlug?: string }) => {
   const dispatch = useDispatch<AppDispatch>();
   
   // Local UI state
@@ -23,8 +23,15 @@ const ShopWithoutSidebar = () => {
   const hasMore = useAppSelector(selectHasMore);
 
   useEffect(() => {
-      dispatch(fetchProducts({}));
-    }, [dispatch]);
+      // If a category slug is provided, update filters and fetch filtered products
+      if (categorySlug) {
+        dispatch(clearProducts());
+        dispatch(updateFilters({ categoryIds: [] })); // reset ids to avoid conflicts
+        dispatch(fetchProducts({ categorySlugs: [categorySlug] }));
+      } else {
+        dispatch(fetchProducts({}));
+      }
+    }, [dispatch, categorySlug]);
 
     // Load more products (pagination)
     const loadMoreProducts = () => {
@@ -43,8 +50,8 @@ const ShopWithoutSidebar = () => {
   return (
     <>
       <Breadcrumb
-        title={"Explore All Products"}
-        pages={["shop", "/", "shop without sidebar"]}
+        title={categorySlug ? "Shop by Category" : "Explore All Products"}
+        pages={categorySlug ? ["shop", "/", `category: ${categorySlug}`] : ["shop", "/", "shop without sidebar"]}
       />
       <section className="overflow-hidden relative pb-20 pt-5 lg:pt-20 xl:pt-28 bg-[#f3f4f6]">
         <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
