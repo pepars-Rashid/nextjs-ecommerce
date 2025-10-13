@@ -7,6 +7,9 @@
 // // 	productCategories,
 // // } from './schema.js';
 
+import { listProducts } from "@/app/actions/action"
+import { max } from "drizzle-orm"
+
 // // // Helper to slugify category names for the categories.slug field
 // // function slugify(input: string): string {
 // // 	return input
@@ -612,3 +615,11 @@
 // }
 
 // pro()
+
+// listProducts({
+// 			   minPrice:140,
+//          maxPrice:700
+// 			 })
+//   .then(result =>{
+//     console.log(result)
+//   })

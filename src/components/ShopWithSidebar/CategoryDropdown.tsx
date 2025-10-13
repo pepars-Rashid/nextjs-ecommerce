@@ -2,52 +2,60 @@
 
 import { fetchProducts, selectFilters, updateFilters} from "@/redux/features/product-slice";
 import { AppDispatch, useAppSelector } from "@/redux/store";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 
-const CategoryItem = ({ category }) => {
+interface CategoryItemProps {
+  category: any;
+  isSelected: boolean;
+  onCategoryChange: (categoryId: number, isSelected: boolean) => void;
+}
+
+const CategoryItem = ({ category, isSelected, onCategoryChange }: CategoryItemProps) => {
   const dispatch = useDispatch<AppDispatch>();
-  const [selected, setSelected] = useState(false);
   const filters = useAppSelector(selectFilters);
-  // // Handle category filter change
-    const handleCategoryChange = (categoryId: number) => {
-      setSelected(!selected)
-      let selectedCategories = [...filters.categoryIds];
-      if (!selected) {
-        selectedCategories.push(categoryId);
-        dispatch(updateFilters({ categoryIds:selectedCategories, offset: 0 }));
-        dispatch(fetchProducts({
-                ...filters,
-                categoryIds: selectedCategories,
-                offset: 0,
-                append: false,
-              }));
-      } else {
-        selectedCategories = selectedCategories.filter(id => id !== categoryId);
-        dispatch(updateFilters({ categoryIds:selectedCategories, offset: 0 }));
-        dispatch(fetchProducts({
-                ...filters,
-                categoryIds: selectedCategories,
-                offset: 0,
-                append: false,
-              }));
-      }
+  
+  // Handle category filter change
+  const handleCategoryChange = (categoryId: number) => {
+    const newSelected = !isSelected;
+    let selectedCategories = [...(filters.categoryIds || [])];
+    
+    if (newSelected) {
+      selectedCategories.push(categoryId);
+    } else {
+      selectedCategories = selectedCategories.filter(id => id !== categoryId);
+    }
+    
+    const newFilters = {
+      ...filters,
+      categoryIds: selectedCategories,
+      offset: 0,
     };
+    
+    dispatch(updateFilters(newFilters));
+    dispatch(fetchProducts({
+      ...newFilters,
+      append: false,
+    }));
+    
+    // Call parent callback to update URL
+    onCategoryChange(categoryId, newSelected);
+  };
   return (
     <button
       className={`${
-        selected && "text-blue"
+        isSelected && "text-blue"
       } group flex items-center justify-between ease-out duration-200 hover:text-blue `}
       onClick={() => handleCategoryChange(category.id)}
     >
       <div className="flex items-center gap-2">
         <div
           className={`cursor-pointer flex items-center justify-center rounded w-4 h-4 border ${
-            selected ? "border-blue bg-blue" : "bg-white border-gray-3"
+            isSelected ? "border-blue bg-blue" : "bg-white border-gray-3"
           }`}
         >
           <svg
-            className={selected ? "block" : "hidden"}
+            className={isSelected ? "block" : "hidden"}
             width="10"
             height="10"
             viewBox="0 0 10 10"
@@ -69,7 +77,7 @@ const CategoryItem = ({ category }) => {
 
       <span
         className={`${
-          selected ? "text-white bg-blue" : "bg-gray-2"
+          isSelected ? "text-white bg-blue" : "bg-gray-2"
         } inline-flex rounded-[30px] text-custom-xs px-2 ease-out duration-200 group-hover:text-white group-hover:bg-blue`}
       >
         {category.productCount}
@@ -78,8 +86,27 @@ const CategoryItem = ({ category }) => {
   );
 };
 
-const CategoryDropdown = ({ categories }) => {
+interface CategoryDropdownProps {
+  categories: any[];
+  selectedCategoryIds: number[];
+  onCategoryChange: (newFilters: any) => void;
+}
+
+const CategoryDropdown = ({ categories, selectedCategoryIds, onCategoryChange }: CategoryDropdownProps) => {
   const [toggleDropdown, setToggleDropdown] = useState(true);
+
+  const handleCategoryChange = (categoryId: number, isSelected: boolean) => {
+    // This will be called by CategoryItem, but we need to update the URL
+    // The actual filter update is already handled in CategoryItem
+    // We just need to trigger the URL update with the updated category IDs
+    const updatedCategoryIds = isSelected 
+      ? [...selectedCategoryIds, categoryId]
+      : selectedCategoryIds.filter(id => id !== categoryId);
+    
+    setTimeout(() => {
+      onCategoryChange({ categoryIds: updatedCategoryIds });
+    }, 0);
+  };
 
   return (
     <div className="bg-white shadow-1 rounded-lg">
@@ -125,7 +152,12 @@ const CategoryDropdown = ({ categories }) => {
         }`}
       >
         {categories.map((category, key) => (
-          <CategoryItem key={key} category={category} />
+          <CategoryItem 
+            key={key} 
+            category={category} 
+            isSelected={selectedCategoryIds.includes(category.id)}
+            onCategoryChange={handleCategoryChange}
+          />
         ))}
       </div>
     </div>

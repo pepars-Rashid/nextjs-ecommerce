@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useSearchParams, usePathname } from "next/navigation";
 import Breadcrumb from "../Common/Breadcrumb";
 import CustomSelect from "./CustomSelect";
 import CategoryDropdown from "./CategoryDropdown";
@@ -27,14 +28,27 @@ import {
   selectCategoriesLoading,
   selectCategoriesError,
 } from "@/redux/features/category-slice";
+import { 
+  parseUrlFilters, 
+  buildUrlFilters, 
+  updateUrlWithFilters, 
+  categorySlugsToIds, 
+  categoryIdsToSlugs,
+  parsePriceRange,
+  buildPriceRange,
+  type ShopFilters 
+} from "@/utils/urlUtils";
 
 const ShopWithSidebar = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   // Local UI state
   const [productStyle, setProductStyle] = useState("grid");
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Redux state
   const products = useAppSelector(selectProducts);
@@ -71,14 +85,41 @@ const ShopWithSidebar = () => {
       | "price_asc"
       | "price_desc"
       | "oldest";
-    dispatch(updateFilters({ sort: newSort, offset: 0 }));
-    dispatch(
-      fetchProducts({
-        ...filters,
-        sort: newSort,
-        offset: 0,
-      })
-    );
+    
+    const newFilters = {
+      ...filters,
+      sort: newSort,
+      offset: 0,
+    };
+    
+    dispatch(updateFilters(newFilters));
+    dispatch(fetchProducts(newFilters));
+    
+    // Update URL
+    const categorySlugs = categoryIdsToSlugs(filters.categoryIds || [], categories);
+    const priceRange = filters.minPrice && filters.maxPrice 
+      ? buildPriceRange(filters.minPrice, filters.maxPrice) 
+      : undefined;
+    
+    updateUrlWithFilters({
+      category: categorySlugs,
+      price: priceRange,
+      sort: newSort,
+    }, pathname);
+  };
+
+  // Update URL when filters change
+  const updateUrlFromFilters = (newFilters: any) => {
+    const categorySlugs = categoryIdsToSlugs(newFilters.categoryIds || [], categories);
+    const priceRange = newFilters.minPrice && newFilters.maxPrice 
+      ? buildPriceRange(newFilters.minPrice, newFilters.maxPrice) 
+      : undefined;
+    
+    updateUrlWithFilters({
+      category: categorySlugs,
+      price: priceRange,
+      sort: newFilters.sort,
+    }, pathname);
   };
 
   // Load more products (pagination)
@@ -106,11 +147,44 @@ const ShopWithSidebar = () => {
     },
   ];
 
-  // Fetch initial data
+  // Fetch categories once on mount (needed for URL parsing)
   useEffect(() => {
-    dispatch(fetchProducts({}));
     dispatch(fetchCategoriesWithCounts());
   }, [dispatch]);
+  
+  useEffect(() => {
+  if (!searchParams || categories.length === 0) return;
+  
+  const urlFilters = parseUrlFilters(searchParams);
+  
+  // Convert category slugs to IDs
+  let categoryIds: number[] = [];
+  if (urlFilters.category && urlFilters.category.length > 0) {
+    categoryIds = categorySlugsToIds(urlFilters.category, categories);
+  }
+
+  // Parse price range
+  let priceRange = null;
+  if (urlFilters.price) {
+    priceRange = parsePriceRange(urlFilters.price);
+  }
+
+  const validSortOptions = ['latest', 'price_asc', 'price_desc', 'oldest'] as const;
+  const sortValue = urlFilters.sort && validSortOptions.includes(urlFilters.sort as any) 
+    ? urlFilters.sort as "latest" | "price_asc" | "price_desc" | "oldest"
+    : 'latest';
+
+  const newFilters = {
+    categoryIds,
+    sort: sortValue,
+    offset: 0,
+    minPrice: priceRange?.min,
+    maxPrice: priceRange?.max,
+  };
+
+  dispatch(updateFilters(newFilters));
+  dispatch(fetchProducts(newFilters));
+}, [searchParams, categories, dispatch]); // Simple dependency array
 
   useEffect(() => {
     window.addEventListener("scroll", handleStickyMenu);
@@ -186,7 +260,26 @@ const ShopWithSidebar = () => {
                   <div className="bg-white shadow-1 rounded-lg py-4 px-5">
                     <div className="flex items-center justify-between">
                       <p>Filters:</p>
-                      <button className="text-blue">Clean All</button>
+                      <button 
+                        className="text-blue hover:underline"
+                        onClick={() => {
+                          // Clear all filters
+                          const clearedFilters = {
+                            categoryIds: [],
+                            minPrice: undefined,
+                            maxPrice: undefined,
+                            sort: 'latest' as const,
+                            offset: 0,
+                          };
+                          dispatch(updateFilters(clearedFilters));
+                          dispatch(fetchProducts(clearedFilters));
+                          
+                          // Clear URL parameters
+                          updateUrlWithFilters({}, pathname);
+                        }}
+                      >
+                        Clear All
+                      </button>
                     </div>
                   </div>
 
@@ -214,11 +307,19 @@ const ShopWithSidebar = () => {
                     )}
 
                     {/* Always render CategoryDropdown, but you might want to handle empty state */}
-                    <CategoryDropdown categories={categories} />
+                    <CategoryDropdown 
+                      categories={categories} 
+                      selectedCategoryIds={filters.categoryIds || []}
+                      onCategoryChange={updateUrlFromFilters}
+                    />
                   </div>
 
                   {/* // <!-- price range box --> */}
-                  <PriceDropdown />
+                  <PriceDropdown 
+                    minPrice={filters.minPrice}
+                    maxPrice={filters.maxPrice}
+                    onPriceChange={updateUrlFromFilters}
+                  />
                 </div>
               </form>
             </div>

@@ -4,6 +4,7 @@ import { listProducts, getProduct } from "@/app/actions/action";
 import type { ListProductsParams } from "@/types/product";
 import { normalizeProducts, createEmptyProduct, normalizeProduct } from "@/utils/productUtils";
 import { ProductSortOption } from "@/types/common";
+import type { RootState } from '../store';
 
 interface InitialState {
   items: Product[];
@@ -18,7 +19,9 @@ interface InitialState {
   // Filter and pagination state
   filters: {
     categoryIds: number[];
-    sort?: ProductSortOption
+    sort?: ProductSortOption;
+    minPrice?: number;
+    maxPrice?: number;
     limit: number;
     offset: number;
   };
@@ -51,14 +54,37 @@ const initialState: InitialState = {
 // Extended params interface for better type safety
 interface FetchProductsParams extends ListProductsParams {
   append?: boolean;
+  categoryIds?: number[]; // Add categoryIds to the params
 }
 
 // Async thunks
 export const fetchProducts = createAsyncThunk(
   'product/fetchProducts',
-  async (params: FetchProductsParams = {}, { rejectWithValue }) => {
+  async (params: FetchProductsParams = {}, { rejectWithValue, getState }) => {
     try {
-      const response = await listProducts(params);
+      // Get categories from state to convert categoryIds to categorySlugs
+      const state = getState() as RootState;
+      const categories = state.categoriesReducer.items;
+      
+      // Convert categoryIds to categorySlugs if categoryIds are provided
+      let categorySlugs: string[] = [];
+      if (params.categoryIds && params.categoryIds.length > 0) {
+        categorySlugs = params.categoryIds
+          .map(id => {
+            const category = categories.find(cat => cat.id === id);
+            return category?.slug;
+          })
+          .filter(slug => slug !== undefined) as string[];
+      }
+      
+      // Prepare params for listProducts (exclude categoryIds, use categorySlugs)
+      const { categoryIds, ...listParams } = params;
+      const finalParams = {
+        ...listParams,
+        categorySlugs: categorySlugs.length > 0 ? categorySlugs : params.categorySlugs,
+      };
+      
+      const response = await listProducts(finalParams);
       return {
         products: normalizeProducts(response),
         append: params.append || false,
@@ -114,6 +140,8 @@ export const productSlice = createSlice({
       state.filters = {
         categoryIds: [],
         sort: "latest",
+        minPrice: undefined,
+        maxPrice: undefined,
         limit: 9,
         offset: 0,
       };

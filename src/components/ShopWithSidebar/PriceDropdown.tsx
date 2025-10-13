@@ -1,14 +1,79 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import RangeSlider from 'react-range-slider-input';
 import 'react-range-slider-input/dist/style.css';
+import { fetchProducts, selectFilters, updateFilters } from "@/redux/features/product-slice";
+import { AppDispatch, useAppSelector } from "@/redux/store";
+import { useDispatch } from "react-redux";
 
-const PriceDropdown = () => {
+interface PriceDropdownProps {
+  minPrice?: number;
+  maxPrice?: number;
+  onPriceChange: (newFilters: any) => void;
+}
+
+const PriceDropdown = ({ minPrice, maxPrice, onPriceChange }: PriceDropdownProps) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const filters = useAppSelector(selectFilters);
   const [toggleDropdown, setToggleDropdown] = useState(true);
+  const isDragging = useRef(false);
+  const currentPriceRef = useRef({ from: minPrice || 1, to: maxPrice || 1599 });
 
   const [selectedPrice, setSelectedPrice] = useState({
-    from: 0,
-    to: 100,
+    from: minPrice || 1,
+    to: maxPrice || 1599,
   });
+
+  // Update local state when props change
+  useEffect(() => {
+    if (minPrice !== undefined && maxPrice !== undefined) {
+      setSelectedPrice({
+        from: minPrice,
+        to: maxPrice,
+      });
+      currentPriceRef.current = { from: minPrice, to: maxPrice };
+    }
+  }, [minPrice, maxPrice]);
+
+  // Handle price range input (only updates UI during dragging)
+  const handlePriceInput = (values: [number, number]) => {
+    const newPrice = {
+      from: Math.floor(values[0]),
+      to: Math.ceil(values[1]),
+    };
+    
+    // Always update UI immediately
+    setSelectedPrice(newPrice);
+    
+    // Store current price for drag end
+    currentPriceRef.current = newPrice;
+  };
+
+  // Handle drag start
+  const handleDragStart = () => {
+    isDragging.current = true;
+  };
+
+  // Handle drag end - call backend with final values
+  const handleDragEnd = () => {
+    isDragging.current = false;
+    
+    const finalPrice = currentPriceRef.current;
+    const newFilters = {
+      ...filters,
+      minPrice: finalPrice.from,
+      maxPrice: finalPrice.to,
+      offset: 0,
+    };
+    
+    dispatch(updateFilters(newFilters));
+    dispatch(fetchProducts({
+      ...newFilters,
+      append: false,
+    }));
+    
+    // Update URL
+    onPriceChange(newFilters);
+  };
 
   return (
     <div className="bg-white shadow-1 rounded-lg">
@@ -51,12 +116,14 @@ const PriceDropdown = () => {
               id="range-slider-gradient"
               className="margin-lg"
               step={'any'}
-              onInput={(e) =>
-                setSelectedPrice({
-                  from: Math.floor(e[0]),
-                  to: Math.ceil(e[1]),
-                })
-              }
+              min={1}
+              max={1599}
+              value={[selectedPrice.from, selectedPrice.to]}
+              onInput={handlePriceInput}
+              onThumbDragStart={handleDragStart}
+              onThumbDragEnd={handleDragEnd}
+              onRangeDragStart={handleDragStart}
+              onRangeDragEnd={handleDragEnd}
             />
 
             <div className="price-amount flex items-center justify-between pt-4">

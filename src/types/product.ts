@@ -41,7 +41,9 @@ export interface ListedProduct {
 export type ListProductsParams = {
   limit?: number;
   offset?: number;
-  categoryIds?: number[];
+  categorySlugs?: string[];
+  minPrice?: number;
+  maxPrice?: number;
   sort?: ProductSortOption;
 };
 

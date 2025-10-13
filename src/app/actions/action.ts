@@ -1,6 +1,6 @@
 "use server"
 import { db } from "@/database/db";
-import { and, asc, count, desc, eq, inArray} from "drizzle-orm";
+import { and, asc, between, count, desc, eq, inArray} from "drizzle-orm";
 import {
 	products,
 	categories,
@@ -20,7 +20,9 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
 	const { 
 	  limit = 9, 
 	  offset = 0, 
-	  categoryIds = [], 
+	  categorySlugs = [], 
+	  minPrice = 0,
+	  maxPrice = 1999,
 	  sort = "latest" 
 	} = params;
 
@@ -31,6 +33,19 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
 	
 	if (offset < 0) {
 	  throw new Error("Offset must be non-negative");
+	}
+
+	// Validate price range
+	if (minPrice < 0) {
+	  throw new Error("Minimum price must be non-negative");
+	}
+	
+	if (maxPrice < 0) {
+	  throw new Error("Maximum price must be non-negative");
+	}
+	
+	if (minPrice > maxPrice) {
+	  throw new Error("Minimum price cannot be greater than maximum price");
 	}
 
 	// Build orderBy clause
@@ -48,14 +63,20 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
 		break;
 	}
 
-	// Build where clause for categories
-	let whereClause = undefined;
+	// Build where conditions array
+	const whereConditions = [];
 	
-	if (categoryIds && categoryIds.length > 0) {
+	// Add price range filter (always applied with defaults: 0 to 1999)
+	whereConditions.push(between(products.discountedPrice, minPrice.toString(), maxPrice.toString()));
+	
+	// Handle category filtering by slugs
+	if (categorySlugs && categorySlugs.length > 0) {
+	  // Get category products by joining with categories table and filtering by slugs
 	  const categoryProducts = await db
 		.select({ productId: productCategories.productId })
 		.from(productCategories)
-		.where(inArray(productCategories.categoryId, categoryIds))
+		.innerJoin(categories, eq(productCategories.categoryId, categories.id))
+		.where(inArray(categories.slug, categorySlugs))
 		.catch(error => {
 		  throw new Error(`Failed to fetch category products: ${error.message}`);
 		});
@@ -66,8 +87,11 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
 		return [];
 	  }
 	  
-	  whereClause = inArray(products.id, allowedProductIds);
+	  whereConditions.push(inArray(products.id, allowedProductIds));
 	}
+	
+	// Combine all where conditions
+	const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
 	const productsWithImages = await db.query.products.findMany({
 	  columns: {
@@ -87,8 +111,9 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
 	}).catch(error => {
 	  throw new Error(`Failed to fetch products: ${error.message}`);
 	});
-	
-	console.log("listProducts called");
+
+	console.log('listProducts called')
+
 	return productsWithImages as ListedProduct[];
 
   } catch (error) {
