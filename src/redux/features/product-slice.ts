@@ -62,29 +62,8 @@ export const fetchProducts = createAsyncThunk(
   'product/fetchProducts',
   async (params: FetchProductsParams = {}, { rejectWithValue, getState }) => {
     try {
-      // Get categories from state to convert categoryIds to categorySlugs
-      const state = getState() as RootState;
-      const categories = state.categoriesReducer.items;
-      
-      // Convert categoryIds to categorySlugs if categoryIds are provided
-      let categorySlugs: string[] = [];
-      if (params.categoryIds && params.categoryIds.length > 0) {
-        categorySlugs = params.categoryIds
-          .map(id => {
-            const category = categories.find(cat => cat.id === id);
-            return category?.slug;
-          })
-          .filter(slug => slug !== undefined) as string[];
-      }
-      
-      // Prepare params for listProducts (exclude categoryIds, use categorySlugs)
-      const { categoryIds, ...listParams } = params;
-      const finalParams = {
-        ...listParams,
-        categorySlugs: categorySlugs.length > 0 ? categorySlugs : params.categorySlugs,
-      };
-      
-      const response = await listProducts(finalParams);
+      // Prefer passing categoryIds directly; server resolves slugs only if needed
+      const response = await listProducts(params);
       return {
         products: normalizeProducts(response),
         append: params.append || false,

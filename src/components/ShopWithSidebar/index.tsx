@@ -78,7 +78,7 @@ const ShopWithSidebar = () => {
     { label: "Oldest Products", value: "oldest" },
   ];
 
-  // Handle sort change
+  // Handle sort change - ONLY updates URL
   const handleSortChange = (sortValue: string) => {
     const newSort = sortValue as
       | "latest"
@@ -86,21 +86,12 @@ const ShopWithSidebar = () => {
       | "price_desc"
       | "oldest";
     
-    const newFilters = {
-      ...filters,
-      sort: newSort,
-      offset: 0,
-    };
-    
-    dispatch(updateFilters(newFilters));
-    dispatch(fetchProducts(newFilters));
-    
-    // Update URL
     const categorySlugs = categoryIdsToSlugs(filters.categoryIds || [], categories);
     const priceRange = filters.minPrice && filters.maxPrice 
       ? buildPriceRange(filters.minPrice, filters.maxPrice) 
       : undefined;
     
+    // ONLY update URL - the useEffect will handle the product fetch
     updateUrlWithFilters({
       category: categorySlugs,
       price: priceRange,
@@ -108,13 +99,14 @@ const ShopWithSidebar = () => {
     }, pathname);
   };
 
-  // Update URL when filters change
+  // Update URL when filters change - ONLY updates URL, doesn't fetch products
   const updateUrlFromFilters = (newFilters: any) => {
     const categorySlugs = categoryIdsToSlugs(newFilters.categoryIds || [], categories);
     const priceRange = newFilters.minPrice && newFilters.maxPrice 
       ? buildPriceRange(newFilters.minPrice, newFilters.maxPrice) 
       : undefined;
     
+    // ONLY update URL - the useEffect will handle the product fetch
     updateUrlWithFilters({
       category: categorySlugs,
       price: priceRange,
@@ -271,8 +263,8 @@ const ShopWithSidebar = () => {
                             sort: 'latest' as const,
                             offset: 0,
                           };
+                          // Update filters for UI only; let URL drive fetching
                           dispatch(updateFilters(clearedFilters));
-                          dispatch(fetchProducts(clearedFilters));
                           
                           // Clear URL parameters
                           updateUrlWithFilters({}, pathname);

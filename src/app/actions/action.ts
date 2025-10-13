@@ -21,6 +21,7 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
 	  limit = 9, 
 	  offset = 0, 
 	  categorySlugs = [], 
+	  categoryIds = [],
 	  minPrice = 0,
 	  maxPrice = 1999,
 	  sort = "latest" 
@@ -69,24 +70,34 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
 	// Add price range filter (always applied with defaults: 0 to 1999)
 	whereConditions.push(between(products.discountedPrice, minPrice.toString(), maxPrice.toString()));
 	
-	// Handle category filtering by slugs
-	if (categorySlugs && categorySlugs.length > 0) {
-	  // Get category products by joining with categories table and filtering by slugs
+	// Handle category filtering by IDs (preferred) or resolve slugs to IDs
+	let effectiveCategoryIds: number[] = [];
+	if (categoryIds && categoryIds.length > 0) {
+	  effectiveCategoryIds = categoryIds;
+	} else if (categorySlugs && categorySlugs.length > 0) {
+	  const rows = await db
+		.select({ id: categories.id })
+		.from(categories)
+		.where(inArray(categories.slug, categorySlugs))
+		.catch(error => {
+		  throw new Error(`Failed to resolve category slugs: ${error.message}`);
+		});
+	  effectiveCategoryIds = rows.map(r => r.id);
+	}
+
+	if (effectiveCategoryIds.length > 0) {
 	  const categoryProducts = await db
 		.select({ productId: productCategories.productId })
 		.from(productCategories)
-		.innerJoin(categories, eq(productCategories.categoryId, categories.id))
-		.where(inArray(categories.slug, categorySlugs))
+		.where(inArray(productCategories.categoryId, effectiveCategoryIds))
 		.catch(error => {
 		  throw new Error(`Failed to fetch category products: ${error.message}`);
 		});
 
 	  const allowedProductIds = categoryProducts.map(r => r.productId);
-	  
 	  if (allowedProductIds.length === 0) {
 		return [];
 	  }
-	  
 	  whereConditions.push(inArray(products.id, allowedProductIds));
 	}
 	

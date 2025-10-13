@@ -65,13 +65,11 @@ const PriceDropdown = ({ minPrice, maxPrice, onPriceChange }: PriceDropdownProps
       offset: 0,
     };
     
+    // Optimistically update filters for immediate UI response.
+    // Do NOT fetch here; URL change will trigger a single fetch in parent.
     dispatch(updateFilters(newFilters));
-    dispatch(fetchProducts({
-      ...newFilters,
-      append: false,
-    }));
     
-    // Update URL
+    // Update URL (parent useEffect will fetch once)
     onPriceChange(newFilters);
   };
 

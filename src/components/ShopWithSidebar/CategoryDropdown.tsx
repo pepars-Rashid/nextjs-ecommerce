@@ -32,11 +32,9 @@ const CategoryItem = ({ category, isSelected, onCategoryChange }: CategoryItemPr
       offset: 0,
     };
     
+    // Optimistically update filters for immediate UI response.
+    // Do NOT fetch here; URL change will trigger a single fetch in parent.
     dispatch(updateFilters(newFilters));
-    dispatch(fetchProducts({
-      ...newFilters,
-      append: false,
-    }));
     
     // Call parent callback to update URL
     onCategoryChange(categoryId, newSelected);
