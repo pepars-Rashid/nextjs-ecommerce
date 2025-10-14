@@ -59,6 +59,14 @@ export const products = pgTable("products", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   uniqueIndex("products_product_slug_unique").on(t.productSlug),
+  // Full-text search GIN index on title (A) and description (B)
+  index("products_search_index").using(
+    'gin',
+    sql`(
+          setweight(to_tsvector('english', ${t.title}), 'A') ||
+          setweight(to_tsvector('english', ${t.description}), 'B')
+      )`
+  ),
 ]);
 
 // Categories

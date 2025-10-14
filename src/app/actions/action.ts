@@ -1,6 +1,6 @@
 "use server"
 import { db } from "@/database/db";
-import { and, asc, between, count, desc, eq, inArray} from "drizzle-orm";
+import { and, asc, between, count, desc, eq, inArray, sql } from "drizzle-orm";
 import {
 	products,
 	categories,
@@ -131,6 +131,58 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Lis
 	console.error("Error in listProducts:", error);
 	return [];
   }
+}
+
+// Full-text search on products.title (A) and products.description (B)
+// Uses websearch_to_tsquery for user-friendly query syntax
+export async function searchProducts(params: {
+	query: string;
+	limit?: number;
+	offset?: number;
+}): Promise<ListedProduct[]> {
+	const {
+		query,
+		limit = 10,
+		offset = 0,
+	} = params;
+
+	if (!query || query.trim().length === 0) return [];
+
+	// Build base match expression (must mirror the index columns/weights)
+	const matchVector = sql`(
+		setweight(to_tsvector('english', ${products.title}), 'A') ||
+		setweight(to_tsvector('english', coalesce(${products.description}, '')), 'B')
+	)`;
+	const tsQuery = sql`websearch_to_tsquery('english', ${query})`;
+
+	// Compose WHERE conditions (full-text match only)
+	const whereConds = [sql`${matchVector} @@ ${tsQuery}`] as any[];
+
+	// Order by relevance (ts_rank)
+	const rankExpr = sql`ts_rank(${matchVector}, ${tsQuery})`;
+
+	const rows = await db
+		.select({
+			id: products.id,
+			title: products.title,
+			price: products.price,
+			productSlug: products.productSlug,
+			discountedPrice: products.discountedPrice,
+			reviewsCount: products.reviewsCount,
+			description: products.description,
+			imagesArray: products.imagesArray,
+			// rank: rankExpr, // if you need to expose rank
+		})
+		.from(products)
+		.where(and(...whereConds))
+		.orderBy(sql`${rankExpr} desc`)
+		.limit(limit)
+		.offset(offset)
+		.catch(error => {
+			throw new Error(`Failed to search products: ${error.message}`);
+		});
+
+	return rows as unknown as ListedProduct[];
 }
 
 export async function getProduct(productSlug: string): Promise<ListedProduct | null> {
