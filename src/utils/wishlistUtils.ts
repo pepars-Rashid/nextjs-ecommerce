@@ -40,6 +40,7 @@ export function normalizeWishlistItems(rawItems: RawWishlistItemWithProduct[] | 
       title: (product as any).title || `Product ${item.productId}`,
       price: priceNum,
       discountedPrice: discountedNum,
+      productSlug: product.productSlug,
       reviews: Number((product as any).reviewsCount ?? 0),
       quantity: 1,
       status: 'available',

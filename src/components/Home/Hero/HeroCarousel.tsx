@@ -7,6 +7,7 @@ import "swiper/css/pagination";
 import "swiper/css";
 
 import Image from "next/image";
+import Link from "next/link";
 
 const HeroCarousal = () => {
   return (
@@ -45,12 +46,12 @@ const HeroCarousal = () => {
             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi at ipsum at risus euismod lobortis in
             </p>
 
-            <a
-              href="#"
+            <Link
+              href='/shop-with-sidebar'
               className="inline-flex font-medium text-white text-custom-sm rounded-md bg-dark py-3 px-9 ease-out duration-200 hover:bg-blue mt-10"
             >
               Shop Now
-            </a>
+            </Link>
           </div>
 
           <div>
@@ -87,12 +88,12 @@ const HeroCarousal = () => {
               nec suscipit.
             </p>
 
-            <a
-              href="#"
+            <Link
+              href='shop-with-sidebar'
               className="inline-flex font-medium text-white text-custom-sm rounded-md bg-dark py-3 px-9 ease-out duration-200 hover:bg-blue mt-10"
             >
               Shop Now
-            </a>
+            </Link>
           </div>
 
           <div>

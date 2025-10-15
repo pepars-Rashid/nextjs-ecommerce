@@ -14,6 +14,7 @@ export interface Product {
   description: string;
   detailedDescription?: string;
   price: number;
+  stock: number,
   discountedPrice: number;
   reviews: number;
   imgs?: ProductImages;
@@ -30,6 +31,7 @@ export interface ListedProduct {
   productSlug?: string;
   title: string;
   price: string;
+  stock: number,
   discountedPrice: string;
   reviewsCount: number;
   description: string;

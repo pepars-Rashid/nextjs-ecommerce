@@ -48,6 +48,7 @@ export function normalizeCartItems(rawItems: RawCartItem[] | any[]): CartItem[] 
       title: (product as any).title || '',
       price: priceNum,
       discountedPrice: discountedNum,
+      productSlug: product.productSlug,
       reviews: Number((product as any).reviewsCount ?? 0),
       quantity: item?.quantity || 1,
       imgs: {

@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch, useAppSelector } from "@/redux/store";
 import Image from "next/image";
 import toast from "react-hot-toast";
+import Link from "next/link";
 
 const SingleItem = ({ item, removeItemFromCart }) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -27,7 +28,7 @@ const SingleItem = ({ item, removeItemFromCart }) => {
 
         <div>
           <h3 className="font-medium text-dark mb-1 ease-out duration-200 hover:text-blue">
-            <a href="#"> {item.title} </a>
+            <Link href={`/product/${item.productSlug}`}> {item.title} </Link>
           </h3>
           <p className="text-custom-sm">Price: ${item.discountedPrice}</p>
         </div>

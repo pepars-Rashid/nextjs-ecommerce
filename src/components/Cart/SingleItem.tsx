@@ -9,6 +9,7 @@ import {
 import toast from "react-hot-toast";
 
 import Image from "next/image";
+import Link from "next/link";
 
 const SingleItem = ({ item }) => {
   const [quantity, setQuantity] = useState(item.quantity);
@@ -65,7 +66,7 @@ const SingleItem = ({ item }) => {
 
             <div>
               <h3 className="text-dark ease-out duration-200 hover:text-blue">
-                <a href="#"> {item.title} </a>
+                <Link href={`product/${item.productSlug}`}> {item.title} </Link>
               </h3>
             </div>
           </div>

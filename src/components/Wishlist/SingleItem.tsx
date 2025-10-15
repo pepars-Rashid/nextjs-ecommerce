@@ -6,6 +6,7 @@ import { addCartItemAsync } from "@/redux/features/cart-slice";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import type { WishlistItem } from "@/types/wishlist";
+import Link from "next/link";
 
 interface SingleItemProps {
   item: WishlistItem;
@@ -104,7 +105,7 @@ const SingleItem: React.FC<SingleItemProps> = ({ item }) => {
 
             <div>
               <h3 className="text-dark ease-out duration-200 hover:text-blue">
-                <a href="#"> {item.title || 'Product'}</a>
+                <Link href={`product/${item.productSlug}`}> {item.title || 'Product'}</Link>
               </h3>
             </div>
           </div>
