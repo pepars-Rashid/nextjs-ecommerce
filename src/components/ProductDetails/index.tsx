@@ -417,12 +417,28 @@ const ProductDetails = ({ productSlug }: { productSlug: string }) => {
                     </button>
                   </div>
 
-                  <a
-                    href="#"
+                  <button
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      if (!product) return;
+                      try {
+                        const res = await fetch('/api/checkout', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ mode: 'single', productId: product.id, quantity }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data?.error || 'Failed to start checkout');
+                        window.location.href = data.url;
+                      } catch (err: any) {
+                        // No toast lib in this file; simple alert to avoid extra deps
+                        alert(err?.message || 'Checkout failed');
+                      }
+                    }}
                     className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark"
                   >
                     Purchase Now
-                  </a>
+                  </button>
 
                   <a
                     href="#"

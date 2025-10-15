@@ -1,6 +1,7 @@
 import { selectTotalPrice } from "@/redux/features/cart-slice";
 import { useAppSelector } from "@/redux/store";
 import React from "react";
+import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 
 const OrderSummary = () => {
@@ -54,7 +55,21 @@ const OrderSummary = () => {
 
           {/* <!-- checkout button --> */}
           <button
-            type="submit"
+            type="button"
+            onClick={async () => {
+              try {
+                const res = await fetch('/api/checkout', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ mode: 'cart' }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data?.error || 'Failed to start checkout');
+                window.location.href = data.url;
+              } catch (e: any) {
+                toast.error(e.message || 'Checkout failed');
+              }
+            }}
             className="w-full flex justify-center font-medium text-white bg-blue py-3 px-6 rounded-md ease-out duration-200 hover:bg-blue-dark mt-7.5"
           >
             Process to Checkout

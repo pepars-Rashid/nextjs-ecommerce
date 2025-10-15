@@ -12,20 +12,23 @@ import { useSelector, useDispatch } from "react-redux";
 import SingleItem from "./SingleItem";
 import Link from "next/link";
 import EmptyCart from "./EmptyCart";
+import toast from "react-hot-toast";
 
 const CartSidebarModal = () => {
   const { isCartModalOpen, closeCartModal } = useCartModalContext();
   const dispatch = useDispatch();
-  
+
   const cartItems = useAppSelector((state) => state.cartReducer.items);
   const cartStatus = useAppSelector((state) => state.cartReducer.status);
-  const removeStatus = useAppSelector((state) => state.cartReducer.removeStatus);
+  const removeStatus = useAppSelector(
+    (state) => state.cartReducer.removeStatus
+  );
   const cartError = useAppSelector((state) => state.cartReducer.error);
   const totalPrice = useSelector(selectTotalPrice);
-  
-  const isLoading = cartStatus === 'pending';
-  const hasError = cartStatus === 'failed' || removeStatus === 'failed';
-  const isRemoving = removeStatus === 'pending';
+
+  const isLoading = cartStatus === "pending";
+  const hasError = cartStatus === "failed" || removeStatus === "failed";
+  const isRemoving = removeStatus === "pending";
 
   useEffect(() => {
     // closing modal while clicking outside
@@ -93,12 +96,20 @@ const CartSidebarModal = () => {
                 </div>
               ) : hasError ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
-                  <svg className="w-12 h-12 text-red-500 mb-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <svg
+                    className="w-12 h-12 text-red-500 mb-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   <p className="text-red-600 font-medium mb-2">Network Error</p>
                   <p className="text-gray-500 mb-4">Please try again later</p>
-                  <button 
+                  <button
                     onClick={() => dispatch(fetchCartItems() as any)}
                     className="px-4 py-2 bg-blue text-white rounded hover:bg-blue-dark"
                   >
@@ -135,12 +146,30 @@ const CartSidebarModal = () => {
                 View Cart
               </Link>
 
-              <Link
-                href="/checkout"
+              {/* <!-- checkout button --> */}
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await fetch("/api/checkout", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ mode: "cart" }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok)
+                      throw new Error(
+                        data?.error || "Failed to start checkout"
+                      );
+                    window.location.href = data.url;
+                  } catch (e: any) {
+                    toast.error(e.message || "Checkout failed");
+                  }
+                }}
                 className="w-full flex justify-center font-medium text-white bg-dark py-[13px] px-6 rounded-md ease-out duration-200 hover:bg-opacity-95"
               >
                 Checkout
-              </Link>
+              </button>
             </div>
           </div>
         </div>
